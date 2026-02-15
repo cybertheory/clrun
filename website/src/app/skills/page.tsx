@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Navbar } from "@/components/navbar";
 import { SkillViewer } from "@/components/skill-viewer";
 
 export const metadata: Metadata = {
@@ -36,9 +37,11 @@ const skills = [
 
 export default function SkillsPage() {
   return (
-    <main className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="border-b border-border/40">
+    <>
+      <Navbar />
+      <main className="min-h-screen bg-background pt-14">
+        {/* Header */}
+        <div className="border-b border-border/40">
         <div className="max-w-5xl mx-auto px-6 py-16 sm:py-24">
           <a
             href="/"
@@ -107,5 +110,6 @@ export default function SkillsPage() {
         </div>
       </div>
     </main>
+    </>
   );
 }
