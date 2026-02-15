@@ -42,6 +42,12 @@ export function Navbar() {
             Skills
           </a>
           <a
+            href="/llms.txt"
+            className="text-sm font-mono text-muted-foreground hover:text-emerald-400 transition-colors hidden sm:block"
+          >
+            llms.txt
+          </a>
+          <a
             href="https://www.npmjs.com/package/clrun"
             className="text-sm text-muted-foreground hover:text-foreground transition-colors hidden sm:block"
           >

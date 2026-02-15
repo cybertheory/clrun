@@ -1,0 +1,43 @@
+# clrun — The Interactive CLI for AI Agents
+
+> Persistent. Deterministic. Project-Scoped Execution.
+> No more --yes flags or command retries.
+
+clrun gives AI agents full control over interactive terminal sessions — TUI prompts, select lists, checkboxes, confirms, long-running processes — with structured YAML responses, contextual hints, and auto-suspend/restore.
+
+- GitHub: https://github.com/cybertheory/clrun
+- npm: https://www.npmjs.com/package/clrun
+
+## Documentation
+
+- [Core Skill Reference](/skills/clrun-skill.md): Complete CLI reference for AI agents. All commands, queue behavior, session lifecycle, state layout.
+- [Claude Code Integration](/skills/claude-code-skill.md): Optimized instructions for Claude Code. Workflow, prompt detection, override strategies.
+- [OpenClaw Integration](/skills/openclaw-skill.md): Structured skill reference for OpenClaw agents. Command reference, workflow pattern, session states.
+
+## Agent Skills Format (agentskills.io)
+
+- [SKILL.md](/skills/clrun/SKILL.md): Agent Skills spec format. Frontmatter + concise instructions for any compatible agent runtime.
+- [TUI Patterns Reference](/skills/clrun/references/tui-patterns.md): Real-world walkthroughs — create-vue, create-vite, npm init, dev servers, env persistence.
+
+## Quick Start
+
+Install:
+```
+npm install -g clrun
+```
+
+Run a command:
+```
+clrun echo "hello world"
+```
+
+Drive an interactive scaffolder:
+```
+clrun "npx create-vue@latest"
+clrun <id> "my-app"
+clrun key <id> down down enter
+```
+
+## Full Documentation
+
+For the complete unabridged documentation, see [/llms-full.txt](/llms-full.txt).
