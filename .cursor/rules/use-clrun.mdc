@@ -1,0 +1,52 @@
+---
+description: Always use clrun for terminal command execution instead of running commands directly
+alwaysApply: true
+---
+
+# Use clrun for All Terminal Commands
+
+When executing terminal commands, **always use `clrun`** instead of running commands directly in the shell. This gives persistent, observable, interactive sessions.
+
+## How to Run Commands
+
+```bash
+# Start a new session
+clrun <command>
+
+# Send input to an existing session
+clrun <terminal_id> "<text>"
+
+# Navigate TUI prompts (select lists, checkboxes, confirms)
+clrun key <terminal_id> down down enter
+clrun key <terminal_id> space down space enter
+
+# Read output
+clrun tail <terminal_id> --lines 50
+
+# Check all sessions
+clrun status
+
+# Kill a session
+clrun kill <terminal_id>
+```
+
+## Rules
+
+1. **Never run shell commands directly** — always wrap them with `clrun`
+2. **Store the `terminal_id`** from every `clrun` response
+3. **Use `clrun key`** for TUI prompts with select lists or checkboxes
+4. **Use `clrun <id> "text"`** for text input prompts
+5. **Use `clrun key <id> enter`** to accept defaults in TUI prompts
+6. **Single-quote `$` variables** — `clrun <id> 'echo $VAR'`
+7. **Read the `hints`** in every response — they tell you exactly what to do next
+8. **Parse YAML** — all clrun responses are structured YAML
+
+## Prompt Types
+
+| You see | Action |
+|---------|--------|
+| `◆ Name: │ default` | `clrun <id> "value"` or `clrun key <id> enter` |
+| `● Option1 ○ Option2` | `clrun key <id> down... enter` |
+| `◻ Check1 ◻ Check2` | `clrun key <id> space down space enter` |
+| `● Yes / ○ No` | `clrun key <id> enter` or `clrun key <id> right enter` |
+| `(y/n)` | `clrun <id> "y"` or `clrun <id> "n"` |

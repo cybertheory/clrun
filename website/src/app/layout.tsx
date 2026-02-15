@@ -17,6 +17,7 @@ export const metadata: Metadata = {
   title: "clrun — The Interactive CLI for AI Agents",
   description:
     "Persistent. Deterministic. Project-Scoped Execution. The production-grade CLI substrate for AI coding agents.",
+  icons: [],
   keywords: [
     "CLI",
     "AI agents",
