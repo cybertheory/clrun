@@ -1,11 +1,13 @@
 import * as path from 'path';
+import * as fs from 'fs';
 import { fork } from 'child_process';
 import { resolveProjectRoot, ensureClrunDirs } from '../utils/paths';
-import { success, fail } from '../utils/output';
+import { success, fail, sessionHints } from '../utils/output';
 import { acquireLock } from '../runtime/lock-manager';
 import { recoverSessions } from '../runtime/crash-recovery';
-import { generateTerminalId } from '../pty/pty-manager';
+import { generateTerminalId, readSession } from '../pty/pty-manager';
 import { initQueue } from '../queue/queue-engine';
+import { tailBuffer } from '../buffer/buffer-manager';
 import { installSkills } from '../skills/skill-installer';
 import { logEvent } from '../ledger/ledger';
 
@@ -17,7 +19,7 @@ export async function runCommand(command: string): Promise<void> {
   ensureClrunDirs(projectRoot);
 
   // Acquire or attach to runtime
-  const lock = acquireLock(projectRoot);
+  acquireLock(projectRoot);
 
   // Run crash recovery
   recoverSessions(projectRoot);
@@ -33,9 +35,7 @@ export async function runCommand(command: string): Promise<void> {
 
   // Find the worker script
   const workerScript = path.join(__dirname, '..', 'worker.js');
-  // In development with tsx, use the .ts version
   const workerScriptTs = path.join(__dirname, '..', 'worker.ts');
-  const fs = require('fs');
   const script = fs.existsSync(workerScript) ? workerScript : workerScriptTs;
 
   // Spawn detached worker process
@@ -43,33 +43,87 @@ export async function runCommand(command: string): Promise<void> {
     const child = fork(script, [terminalId, command, cwd, projectRoot], {
       detached: true,
       stdio: 'ignore',
-      // When running via tsx, we need to use the same Node options
       execArgv: script.endsWith('.ts') ? ['--import', 'tsx'] : [],
     });
 
     child.unref();
 
-    const workerPid = child.pid;
-
     logEvent('session.created', projectRoot, terminalId, {
       command,
       cwd,
-      worker_pid: workerPid,
+      worker_pid: child.pid,
     });
 
-    // Give the worker a moment to initialize the session file
-    await new Promise((resolve) => setTimeout(resolve, 300));
+    // ── Wait for initial output (up to 5s) ──────────────────────────────
+    const maxWait = 5000;
+    const poll = 150;
+    let elapsed = 0;
+    let outputLines: string[] = [];
+    let sessionStatus = 'running';
+    let exitCode: number | null = null;
 
-    success({
+    while (elapsed < maxWait) {
+      await new Promise((r) => setTimeout(r, poll));
+      elapsed += poll;
+
+      outputLines = tailBuffer(terminalId, 50, projectRoot);
+
+      // Check if the process already exited (fast commands like echo)
+      const sess = readSession(terminalId, projectRoot);
+      if (sess) {
+        sessionStatus = sess.status;
+        exitCode = sess.last_exit_code;
+      }
+
+      if (sess && sess.status === 'exited') {
+        // Grab final output
+        outputLines = tailBuffer(terminalId, 50, projectRoot);
+        break;
+      }
+
+      if (outputLines.length > 0) {
+        // Got some output — wait a bit more for it to settle
+        await new Promise((r) => setTimeout(r, 300));
+        outputLines = tailBuffer(terminalId, 50, projectRoot);
+
+        // Re-check status
+        const updated = readSession(terminalId, projectRoot);
+        if (updated) {
+          sessionStatus = updated.status;
+          exitCode = updated.last_exit_code;
+        }
+        break;
+      }
+    }
+
+    // ── Build response ──────────────────────────────────────────────────
+    const output = outputLines.length > 0
+      ? outputLines.map((l) => l.replace(/\r$/, '')).join('\n')
+      : null;
+
+    const response: Record<string, unknown> = {
       terminal_id: terminalId,
       command,
       cwd,
-      status: 'running',
-      worker_pid: workerPid,
-      runtime: lock.message,
-    });
+      status: sessionStatus,
+    };
+
+    if (exitCode !== null) {
+      response.exit_code = exitCode;
+    }
+
+    if (output) {
+      response.output = output;
+    }
+
+    // Only show interaction hints if session is still running
+    if (sessionStatus === 'running') {
+      response.hints = sessionHints(terminalId);
+    }
+
+    success(response);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    fail(`Failed to spawn worker: ${message}`);
+    fail(`Failed to spawn session: ${message}`);
   }
 }

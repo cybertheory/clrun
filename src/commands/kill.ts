@@ -6,46 +6,34 @@ import { logEvent } from '../ledger/ledger';
 export async function killCommand(terminalId: string): Promise<void> {
   const projectRoot = resolveProjectRoot();
 
-  // Verify session exists
   const session = readSession(terminalId, projectRoot);
   if (!session) {
     fail(`Session not found: ${terminalId}`);
   }
 
-  // Check if already terminated
   if (session!.status === 'exited' || session!.status === 'killed') {
     fail(`Session already terminated (status: ${session!.status})`);
   }
 
-  // Try to kill the worker process
   let workerKilled = false;
   if (isPtyAlive(session!.worker_pid)) {
     try {
       process.kill(session!.worker_pid, 'SIGTERM');
       workerKilled = true;
-    } catch {
-      // May have already exited
-    }
+    } catch {}
   }
 
-  // Also try to kill the PTY process directly
   let ptyKilled = false;
   if (isPtyAlive(session!.pid)) {
     try {
       process.kill(session!.pid, 'SIGTERM');
       ptyKilled = true;
-    } catch {
-      // May have already exited
-    }
+    } catch {}
   }
 
-  // Update session status
   updateSession(
     terminalId,
-    {
-      status: 'killed',
-      last_activity_at: new Date().toISOString(),
-    },
+    { status: 'killed', last_activity_at: new Date().toISOString() },
     projectRoot
   );
 
@@ -57,7 +45,9 @@ export async function killCommand(terminalId: string): Promise<void> {
   success({
     terminal_id: terminalId,
     status: 'killed',
-    worker_killed: workerKilled,
-    pty_killed: ptyKilled,
+    hints: {
+      check_status: 'clrun status',
+      new_session: 'clrun <command>',
+    },
   });
 }

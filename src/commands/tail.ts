@@ -10,7 +10,6 @@ export async function tailCommand(
   const projectRoot = resolveProjectRoot();
   const lineCount = options.lines ?? 50;
 
-  // Verify session exists
   const session = readSession(terminalId, projectRoot);
   if (!session) {
     fail(`Session not found: ${terminalId}`);
@@ -18,14 +17,32 @@ export async function tailCommand(
 
   const lines = tailBuffer(terminalId, lineCount, projectRoot);
   const totalLines = bufferLineCount(terminalId, projectRoot);
+  const output = lines.map((l) => l.replace(/\r$/, '')).join('\n');
 
-  success({
+  const response: Record<string, unknown> = {
     terminal_id: terminalId,
     command: session!.command,
     status: session!.status,
-    lines,
-    line_count: lines.length,
     total_lines: totalLines,
-    last_exit_code: session!.last_exit_code,
-  });
+  };
+
+  if (session!.last_exit_code !== null) {
+    response.exit_code = session!.last_exit_code;
+  }
+
+  if (output) {
+    response.output = output;
+  }
+
+  if (session!.status === 'running') {
+    response.hints = {
+      send_input: `clrun input ${terminalId} "<response>"`,
+      send_with_priority: `clrun input ${terminalId} "<response>" --priority 5`,
+      override: `clrun input ${terminalId} "<text>" --override`,
+      more_output: `clrun tail ${terminalId} --lines ${lineCount * 2}`,
+      kill: `clrun kill ${terminalId}`,
+    };
+  }
+
+  success(response);
 }
