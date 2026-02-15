@@ -7,6 +7,11 @@
   "bin": {
     "clrun": "dist/index.js"
   },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/index.ts",
@@ -26,11 +31,11 @@
     "execution",
     "deterministic"
   ],
-  "author": "",
+  "author": "cybertheory",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/cybertheory/clrun"
+    "url": "git+https://github.com/cybertheory/clrun.git"
   },
   "engines": {
     "node": ">=18.0.0"

@@ -1,0 +1,14 @@
+# Source
+src/
+test/
+vitest.config.ts
+tsconfig.json
+
+# Website
+website/
+
+# Dev/CI
+.clrun/
+.git/
+.gitignore
+*.log
