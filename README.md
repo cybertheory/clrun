@@ -4,6 +4,8 @@
 
 **Persistent. Deterministic. Agent-Native.**
 
+*yup! that's right — no more `--yes` or command retries*
+
 `clrun` gives AI agents full control over interactive terminal sessions — TUI prompts, select lists, checkboxes, long-running processes, and stateful shells. Every response is structured YAML with contextual hints telling the agent exactly what to do next.
 
 ```bash
