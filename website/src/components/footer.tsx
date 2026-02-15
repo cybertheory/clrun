@@ -26,7 +26,7 @@ export function Footer() {
 
           <div className="flex items-center gap-6 text-sm text-muted-foreground">
             <a
-              href="https://github.com/clrun/clrun"
+              href="https://github.com/cybertheory/clrun"
               className="hover:text-foreground transition-colors"
             >
               GitHub
@@ -38,7 +38,7 @@ export function Footer() {
               npm
             </a>
             <a
-              href="https://github.com/clrun/clrun/blob/main/README.md"
+              href="https://github.com/cybertheory/clrun/blob/main/README.md"
               className="hover:text-foreground transition-colors"
             >
               Documentation

@@ -100,7 +100,7 @@ export function Hero() {
             className="h-12 px-8 text-base font-medium gap-2 rounded-xl"
             asChild
           >
-            <a href="https://github.com/clrun/clrun">
+            <a href="https://github.com/cybertheory/clrun">
               Get Started
               <ArrowRight className="w-4 h-4" />
             </a>
@@ -111,7 +111,7 @@ export function Hero() {
             className="h-12 px-8 text-base font-medium rounded-xl border-border/50 bg-card/30 backdrop-blur-sm"
             asChild
           >
-            <a href="https://github.com/clrun/clrun">
+            <a href="https://github.com/cybertheory/clrun">
               View on GitHub
             </a>
           </Button>
