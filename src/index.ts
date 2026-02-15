@@ -83,6 +83,18 @@ program
     await killCommand(terminalId);
   }));
 
-// ─── Parse ──────────────────────────────────────────────────────────────────
+// ─── Default: treat unknown args as a command to run ────────────────────────
 
-program.parse();
+const knownCommands = new Set(['run', 'input', 'tail', 'head', 'status', 'kill', 'help']);
+
+const firstArg = process.argv[2];
+
+if (firstArg && !firstArg.startsWith('-') && !knownCommands.has(firstArg)) {
+  // Everything after `clrun` is the command: clrun echo hello world → "echo hello world"
+  const command = process.argv.slice(2).join(' ');
+  withErrorHandling(async () => {
+    await runCommand(command);
+  })();
+} else {
+  program.parse();
+}
