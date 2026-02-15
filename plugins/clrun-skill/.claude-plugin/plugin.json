@@ -1,0 +1,12 @@
+{
+  "name": "clrun-skill",
+  "description": "Teaches Claude Code how to use clrun for interactive terminal sessions — TUI prompts, select lists, checkboxes, confirms, long-running processes, and env persistence.",
+  "version": "1.0.1",
+  "author": {
+    "name": "cybertheory"
+  },
+  "homepage": "https://github.com/cybertheory/clrun",
+  "repository": "https://github.com/cybertheory/clrun",
+  "license": "MIT",
+  "keywords": ["cli", "terminal", "tui", "interactive", "agent", "pty", "shell"]
+}

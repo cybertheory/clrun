@@ -7,8 +7,16 @@ tsconfig.json
 # Website
 website/
 
+# Claude Code Plugin
+.claude-plugin/
+plugins/
+
+# Agent Skills source
+skills/
+
 # Dev/CI
 .clrun/
 .git/
 .gitignore
+.cursor/
 *.log

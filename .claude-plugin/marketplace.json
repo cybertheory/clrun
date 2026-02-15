@@ -1,0 +1,26 @@
+{
+  "name": "cybertheory-clrun",
+  "owner": {
+    "name": "cybertheory"
+  },
+  "metadata": {
+    "description": "The Interactive CLI for AI Agents. Persistent, deterministic, project-scoped terminal sessions with TUI navigation and structured YAML responses.",
+    "version": "1.0.1"
+  },
+  "plugins": [
+    {
+      "name": "clrun-skill",
+      "source": "./plugins/clrun-skill",
+      "description": "Teaches Claude Code how to use clrun for interactive terminal sessions — TUI prompts, select lists, checkboxes, confirms, long-running processes, and env persistence.",
+      "version": "1.0.1",
+      "author": {
+        "name": "cybertheory"
+      },
+      "homepage": "https://github.com/cybertheory/clrun",
+      "repository": "https://github.com/cybertheory/clrun",
+      "license": "MIT",
+      "keywords": ["cli", "terminal", "tui", "interactive", "agent", "pty", "shell"],
+      "category": "development"
+    }
+  ]
+}
