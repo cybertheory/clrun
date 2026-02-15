@@ -81,7 +81,7 @@ export function Hero() {
               <div className="flex items-center gap-2">
                 <span className="text-zinc-500">$</span>
                 <span className="text-emerald-400 text-sm sm:text-base">
-                  npm install -g clrun
+                  npx clrun echo hello world
                 </span>
               </div>
             </div>
