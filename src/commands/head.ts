@@ -1,7 +1,8 @@
 import { resolveProjectRoot } from '../utils/paths';
-import { success, fail } from '../utils/output';
+import { success, fail, cleanOutput } from '../utils/output';
 import { readSession } from '../pty/pty-manager';
 import { headBuffer, bufferLineCount } from '../buffer/buffer-manager';
+import { sessionNotFoundError, checkOutputQuality } from '../utils/validate';
 
 export async function headCommand(
   terminalId: string,
@@ -12,12 +13,13 @@ export async function headCommand(
 
   const session = readSession(terminalId, projectRoot);
   if (!session) {
-    fail(`Session not found: ${terminalId}`);
+    fail(sessionNotFoundError(terminalId));
   }
 
   const lines = headBuffer(terminalId, lineCount, projectRoot);
   const totalLines = bufferLineCount(terminalId, projectRoot);
-  const output = lines.map((l) => l.replace(/\r$/, '')).join('\n');
+  const rawOutput = cleanOutput(lines);
+  const { output, warnings } = checkOutputQuality(rawOutput, 'head output');
 
   const response: Record<string, unknown> = {
     terminal_id: terminalId,
@@ -34,10 +36,14 @@ export async function headCommand(
     response.output = output;
   }
 
+  if (warnings.length > 0) {
+    response.warnings = warnings;
+  }
+
   if (session!.status === 'running') {
     response.hints = {
-      send_input: `clrun input ${terminalId} "<response>"`,
-      override: `clrun input ${terminalId} "<text>" --override`,
+      send_input: `clrun ${terminalId} '<command>'`,
+      override: `clrun input ${terminalId} '<text>' --override`,
       more_output: `clrun head ${terminalId} --lines ${lineCount * 2}`,
       tail: `clrun tail ${terminalId} --lines 50`,
       kill: `clrun kill ${terminalId}`,

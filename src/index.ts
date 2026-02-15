@@ -3,6 +3,7 @@
 import { Command } from 'commander';
 import { runCommand } from './commands/run';
 import { inputCommand } from './commands/input';
+import { keyCommand } from './commands/key';
 import { tailCommand } from './commands/tail';
 import { headCommand } from './commands/head';
 import { statusCommand } from './commands/status';
@@ -40,6 +41,17 @@ program
       priority: parseInt(opts.priority, 10),
       override: opts.override ?? false,
     });
+  }));
+
+// ─── key ─────────────────────────────────────────────────────────────────────
+
+program
+  .command('key')
+  .description('Send named keystrokes to a terminal (arrow keys, tab, enter, etc.)')
+  .argument('<terminal_id>', 'Terminal session ID')
+  .argument('<keys...>', 'Key names: up, down, left, right, enter, tab, escape, space, backspace')
+  .action(withErrorHandling(async (terminalId: string, keys: string[]) => {
+    await keyCommand(terminalId, keys);
   }));
 
 // ─── tail ───────────────────────────────────────────────────────────────────
@@ -86,7 +98,7 @@ program
 // ─── Smart routing: bare commands & terminal_id shorthand ───────────────────
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const knownCommands = new Set(['run', 'input', 'tail', 'head', 'status', 'kill', 'help']);
+const knownCommands = new Set(['run', 'input', 'key', 'tail', 'head', 'status', 'kill', 'help']);
 
 const firstArg = process.argv[2];
 

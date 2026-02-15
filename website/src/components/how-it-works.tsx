@@ -45,7 +45,7 @@ export function HowItWorks() {
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             A minimal, powerful API surface designed for machine consumption.
-            Every response is structured JSON.
+            Every response is structured YAML.
           </p>
         </motion.div>
 

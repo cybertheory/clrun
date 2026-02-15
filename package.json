@@ -11,6 +11,8 @@
     "build": "tsc",
     "dev": "tsx src/index.ts",
     "postinstall": "node -e \"try{require('fs').chmodSync(require('path').join('node_modules','node-pty','prebuilds',process.platform+'-'+process.arch,'spawn-helper'),0o755)}catch{}\"",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "prepublishOnly": "npm run build",
     "clean": "rm -rf dist"
   },
@@ -41,6 +43,7 @@
   "devDependencies": {
     "@types/node": "^22.13.4",
     "tsx": "^4.19.3",
-    "typescript": "^5.7.3"
+    "typescript": "^5.7.3",
+    "vitest": "^4.0.18"
   }
 }

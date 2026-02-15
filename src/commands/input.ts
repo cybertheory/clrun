@@ -1,9 +1,16 @@
 import { resolveProjectRoot } from '../utils/paths';
-import { success, fail, sessionHints } from '../utils/output';
+import { success, fail, cleanOutput } from '../utils/output';
 import { readSession, isPtyAlive } from '../pty/pty-manager';
 import { enqueueInput, enqueueOverride, pendingCount } from '../queue/queue-engine';
-import { tailBuffer } from '../buffer/buffer-manager';
+import { getBufferSize, readBufferSince } from '../buffer/buffer-manager';
+import { restoreSession } from '../runtime/restore';
 import { logEvent } from '../ledger/ledger';
+import {
+  validateInput,
+  checkOutputQuality,
+  sessionNotFoundError,
+  sessionNotRunningError,
+} from '../utils/validate';
 
 export async function inputCommand(
   terminalId: string,
@@ -12,19 +19,69 @@ export async function inputCommand(
 ): Promise<void> {
   const projectRoot = resolveProjectRoot();
 
-  // Verify session exists
-  const session = readSession(terminalId, projectRoot);
+  // ── Validate input ────────────────────────────────────────────────────
+  const inputCheck = validateInput(input);
+
+  // ── Verify session exists ─────────────────────────────────────────────
+  let session = readSession(terminalId, projectRoot);
   if (!session) {
-    fail(`Session not found: ${terminalId}`);
+    fail(sessionNotFoundError(terminalId));
   }
 
+  // ── Transparent restore for suspended sessions ────────────────────────
+  if (session!.status === 'suspended') {
+    const bufferBefore = getBufferSize(terminalId, projectRoot);
+
+    if (options.override) {
+      enqueueOverride(terminalId, input, projectRoot);
+    } else {
+      enqueueInput(terminalId, input, options.priority ?? 0, projectRoot);
+    }
+
+    await restoreSession(terminalId, projectRoot);
+    session = readSession(terminalId, projectRoot);
+    await new Promise((r) => setTimeout(r, 600));
+
+    const newLines = readBufferSince(terminalId, bufferBefore, projectRoot);
+    const rawOutput = cleanOutput(newLines, input);
+    const { output, warnings: outputWarnings } = checkOutputQuality(rawOutput, 'input response');
+
+    const allWarnings = [...inputCheck.warnings, ...outputWarnings];
+
+    success({
+      terminal_id: terminalId,
+      input,
+      mode: options.override ? 'override' : 'normal',
+      restored: true,
+      ...(output && { output }),
+      ...(allWarnings.length > 0 && { warnings: allWarnings }),
+      hints: {
+        view_output: `clrun tail ${terminalId} --lines 50`,
+        send_more: `clrun ${terminalId} '<next command>'`,
+        check_status: `clrun status`,
+      },
+    });
+    return;
+  }
+
+  // ── Check session is running ──────────────────────────────────────────
   if (session!.status !== 'running') {
-    fail(`Session is not running (status: ${session!.status})`);
+    fail(sessionNotRunningError(terminalId, session!.status));
   }
 
   if (!isPtyAlive(session!.worker_pid)) {
-    fail(`Session worker is not alive (PID: ${session!.worker_pid})`);
+    fail({
+      error: `Session worker is not alive (PID: ${session!.worker_pid})`,
+      hints: {
+        note: 'The worker process has died. The session may need recovery.',
+        check_status: 'clrun status',
+        start_new: 'clrun <command>',
+      },
+    });
   }
+
+  // ── Snapshot buffer, enqueue, wait for output ─────────────────────────
+  const bufferBefore = getBufferSize(terminalId, projectRoot);
 
   if (options.override) {
     const { entry, cancelled } = enqueueOverride(terminalId, input, projectRoot);
@@ -37,12 +94,12 @@ export async function inputCommand(
 
     try { process.kill(session!.worker_pid, 'SIGUSR1'); } catch {}
 
-    // Wait briefly for the input to be processed and output to appear
     await new Promise((r) => setTimeout(r, 400));
-    const outputLines = tailBuffer(terminalId, 20, projectRoot);
-    const output = outputLines.length > 0
-      ? outputLines.map((l) => l.replace(/\r$/, '')).join('\n')
-      : null;
+    const newLines = readBufferSince(terminalId, bufferBefore, projectRoot);
+    const rawOutput = cleanOutput(newLines, input);
+    const { output, warnings: outputWarnings } = checkOutputQuality(rawOutput, 'input response');
+
+    const allWarnings = [...inputCheck.warnings, ...outputWarnings];
 
     success({
       terminal_id: terminalId,
@@ -50,9 +107,10 @@ export async function inputCommand(
       mode: 'override',
       cancelled_count: cancelled,
       ...(output && { output }),
+      ...(allWarnings.length > 0 && { warnings: allWarnings }),
       hints: {
         view_output: `clrun tail ${terminalId} --lines 50`,
-        send_more: `clrun input ${terminalId} "<next response>"`,
+        send_more: `clrun ${terminalId} '<next command>'`,
         check_status: `clrun status`,
       },
     });
@@ -68,12 +126,12 @@ export async function inputCommand(
 
     try { process.kill(session!.worker_pid, 'SIGUSR1'); } catch {}
 
-    // Wait briefly for the input to be processed and output to appear
     await new Promise((r) => setTimeout(r, 400));
-    const outputLines = tailBuffer(terminalId, 20, projectRoot);
-    const output = outputLines.length > 0
-      ? outputLines.map((l) => l.replace(/\r$/, '')).join('\n')
-      : null;
+    const newLines = readBufferSince(terminalId, bufferBefore, projectRoot);
+    const rawOutput = cleanOutput(newLines, input);
+    const { output, warnings: outputWarnings } = checkOutputQuality(rawOutput, 'input response');
+
+    const allWarnings = [...inputCheck.warnings, ...outputWarnings];
 
     success({
       terminal_id: terminalId,
@@ -82,10 +140,11 @@ export async function inputCommand(
       mode: 'normal',
       queue_pending: pendingCount(terminalId, projectRoot),
       ...(output && { output }),
+      ...(allWarnings.length > 0 && { warnings: allWarnings }),
       hints: {
         view_output: `clrun tail ${terminalId} --lines 50`,
-        send_more: `clrun input ${terminalId} "<next response>"`,
-        override: `clrun input ${terminalId} "<text>" --override`,
+        send_more: `clrun ${terminalId} '<next command>'`,
+        override: `clrun input ${terminalId} '<text>' --override`,
         check_status: `clrun status`,
       },
     });

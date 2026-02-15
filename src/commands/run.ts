@@ -2,35 +2,43 @@ import * as path from 'path';
 import * as fs from 'fs';
 import { fork } from 'child_process';
 import { resolveProjectRoot, ensureClrunDirs } from '../utils/paths';
-import { success, fail, sessionHints } from '../utils/output';
+import { success, fail, sessionHints, cleanOutput } from '../utils/output';
 import { acquireLock } from '../runtime/lock-manager';
 import { recoverSessions } from '../runtime/crash-recovery';
 import { generateTerminalId, readSession } from '../pty/pty-manager';
 import { initQueue } from '../queue/queue-engine';
-import { tailBuffer } from '../buffer/buffer-manager';
+import { getBufferSize, readBufferSince } from '../buffer/buffer-manager';
 import { installSkills } from '../skills/skill-installer';
 import { logEvent } from '../ledger/ledger';
+import { validateCommand, checkOutputQuality } from '../utils/validate';
 
 export async function runCommand(command: string): Promise<void> {
   const projectRoot = resolveProjectRoot();
+  // Use the caller's actual working directory so the terminal starts
+  // where the agent (or user) currently is.
   const cwd = process.cwd();
+
+  // ── Validate command ──────────────────────────────────────────────────
+  const cmdCheck = validateCommand(command);
+
+  if (!command.trim()) {
+    fail({
+      error: 'No command provided.',
+      hints: {
+        example: "clrun echo 'hello world'",
+        interactive: "clrun 'python3 script.py'",
+        usage: 'clrun <command>',
+      },
+    });
+  }
 
   // Ensure directories exist
   ensureClrunDirs(projectRoot);
-
-  // Acquire or attach to runtime
   acquireLock(projectRoot);
-
-  // Run crash recovery
   recoverSessions(projectRoot);
-
-  // Install skills on first init
   installSkills(projectRoot);
 
-  // Generate terminal ID
   const terminalId = generateTerminalId();
-
-  // Initialize queue
   initQueue(terminalId, projectRoot);
 
   // Find the worker script
@@ -38,7 +46,6 @@ export async function runCommand(command: string): Promise<void> {
   const workerScriptTs = path.join(__dirname, '..', 'worker.ts');
   const script = fs.existsSync(workerScript) ? workerScript : workerScriptTs;
 
-  // Spawn detached worker process
   try {
     const child = fork(script, [terminalId, command, cwd, projectRoot], {
       detached: true,
@@ -54,11 +61,11 @@ export async function runCommand(command: string): Promise<void> {
       worker_pid: child.pid,
     });
 
-    // ── Wait for initial output (up to 5s) ──────────────────────────────
+    // ── Wait for initial output (up to 5s) ────────────────────────────
+    const bufferStart = getBufferSize(terminalId, projectRoot);
     const maxWait = 5000;
     const poll = 150;
     let elapsed = 0;
-    let outputLines: string[] = [];
     let sessionStatus = 'running';
     let exitCode: number | null = null;
 
@@ -66,9 +73,9 @@ export async function runCommand(command: string): Promise<void> {
       await new Promise((r) => setTimeout(r, poll));
       elapsed += poll;
 
-      outputLines = tailBuffer(terminalId, 50, projectRoot);
+      const currentSize = getBufferSize(terminalId, projectRoot);
+      const hasNewOutput = currentSize > bufferStart;
 
-      // Check if the process already exited (fast commands like echo)
       const sess = readSession(terminalId, projectRoot);
       if (sess) {
         sessionStatus = sess.status;
@@ -76,17 +83,11 @@ export async function runCommand(command: string): Promise<void> {
       }
 
       if (sess && sess.status === 'exited') {
-        // Grab final output
-        outputLines = tailBuffer(terminalId, 50, projectRoot);
         break;
       }
 
-      if (outputLines.length > 0) {
-        // Got some output — wait a bit more for it to settle
+      if (hasNewOutput) {
         await new Promise((r) => setTimeout(r, 300));
-        outputLines = tailBuffer(terminalId, 50, projectRoot);
-
-        // Re-check status
         const updated = readSession(terminalId, projectRoot);
         if (updated) {
           sessionStatus = updated.status;
@@ -96,10 +97,12 @@ export async function runCommand(command: string): Promise<void> {
       }
     }
 
-    // ── Build response ──────────────────────────────────────────────────
-    const output = outputLines.length > 0
-      ? outputLines.map((l) => l.replace(/\r$/, '')).join('\n')
-      : null;
+    // ── Build response with assertions ────────────────────────────────
+    const newLines = readBufferSince(terminalId, bufferStart, projectRoot);
+    const rawOutput = cleanOutput(newLines, command);
+    const { output, warnings: outputWarnings } = checkOutputQuality(rawOutput, 'run response');
+
+    const allWarnings = [...cmdCheck.warnings, ...outputWarnings];
 
     const response: Record<string, unknown> = {
       terminal_id: terminalId,
@@ -116,14 +119,33 @@ export async function runCommand(command: string): Promise<void> {
       response.output = output;
     }
 
-    // Only show interaction hints if session is still running
+    if (allWarnings.length > 0) {
+      response.warnings = allWarnings;
+    }
+
+    // Contextual hints based on outcome
     if (sessionStatus === 'running') {
-      response.hints = sessionHints(terminalId);
+      response.hints = {
+        ...sessionHints(terminalId),
+        note: 'Session is running. Use single quotes for shell variables: clrun <id> \'echo $VAR\'',
+      };
+    } else if (sessionStatus === 'exited' && exitCode !== 0) {
+      response.hints = {
+        read_full_output: `clrun tail ${terminalId} --lines 100`,
+        start_new: 'clrun <command>',
+        note: `Command exited with code ${exitCode}. Check output for errors.`,
+      };
     }
 
     success(response);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    fail(`Failed to spawn session: ${message}`);
+    fail({
+      error: `Failed to spawn session: ${message}`,
+      hints: {
+        check_node_pty: 'Ensure node-pty is installed: npm install node-pty',
+        check_permissions: 'Run: chmod +x node_modules/node-pty/prebuilds/*/spawn-helper',
+      },
+    });
   }
 }

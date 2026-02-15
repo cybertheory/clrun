@@ -9,58 +9,161 @@ for interactive, persistent command execution within coding projects.
 
 `clrun` is a project-scoped CLI execution substrate. It creates interactive
 terminal sessions that persist independently of your agent process, with
-deterministic input queuing and priority control.
+deterministic input queuing, keystroke navigation, and priority control.
+
+All responses are **structured YAML** with `hints` (valid next actions) and
+`warnings` (detected issues).
 
 ## Command Reference
 
 ### Create Session
+```bash
+clrun <command>                   # Bare shorthand
+clrun run "<shell_command>"       # Explicit
 ```
-clrun run "<shell_command>"
-```
-Returns: `{ ok: true, data: { terminal_id, command, status, pid } }`
 
-### Queue Input
+### Send Text Input
+```bash
+clrun <id> "<text>"               # Bare shorthand (sends text + Enter)
+clrun input <id> "<text>" [--priority N] [--override]
 ```
-clrun input <terminal_id> "<text>" [--priority N] [--override]
-```
-Returns: `{ ok: true, data: { queue_id, status, mode } }`
 
-### Read Output (Latest)
+### Send Keystrokes (TUI navigation)
+```bash
+clrun key <id> <key> [<key>...]
 ```
-clrun tail <terminal_id> [--lines N]
-```
-Returns: `{ ok: true, data: { terminal_id, lines, total_lines } }`
+Keys: `up`, `down`, `left`, `right`, `enter`, `tab`, `escape`, `space`,
+`backspace`, `delete`, `home`, `end`, `pageup`, `pagedown`,
+`ctrl-c`, `ctrl-d`, `ctrl-z`, `ctrl-l`, `ctrl-a`, `ctrl-e`, `y`, `n`
 
-### Read Output (Beginning)
+### Read Output
+```bash
+clrun tail <id> [--lines N]       # Latest output (default: 50)
+clrun head <id> [--lines N]       # First output (default: 50)
+clrun <id>                        # Shorthand for tail
 ```
-clrun head <terminal_id> [--lines N]
-```
-Returns: `{ ok: true, data: { terminal_id, lines, total_lines } }`
 
-### Runtime Status
+### Status & Control
+```bash
+clrun status                      # All sessions
+clrun kill <id>                   # Terminate session
 ```
-clrun status
-```
-Returns: `{ ok: true, data: { sessions: [...], detached: [...] } }`
 
-### Terminate Session
+## Prompt Type Identification & Handling
+
+When you observe a prompt in `tail` output, identify its type:
+
+### Text Input — send text
 ```
-clrun kill <terminal_id>
+◆  Project name:
+│  default-value
 ```
-Returns: `{ ok: true, data: { terminal_id, status: "killed" } }`
+```bash
+clrun <id> "my-project"           # Type custom name
+clrun key <id> enter              # Accept the default
+```
+
+### Single-Select — navigate with arrows, confirm with enter
+```
+◆  Select a framework:
+│  ● Vanilla       ← 0 downs
+│  ○ Vue           ← 1 down
+│  ○ React         ← 2 downs
+│  ○ Svelte        ← 3 downs
+```
+```bash
+clrun key <id> down down enter    # Select React (2 downs + enter)
+clrun key <id> enter              # Accept default (Vanilla)
+```
+
+### Multi-Select — toggle with space, navigate with arrows, confirm with enter
+```
+◆  Select features:
+│  ◻ TypeScript    ← toggle with space
+│  ◻ Router
+│  ◻ Linter
+│  ◻ Prettier
+```
+```bash
+# Select TypeScript + Linter (1st and 3rd):
+clrun key <id> space down down space enter
+#              TS    skip  skip  Linter confirm
+```
+
+### Confirm — enter to accept default, arrows to switch
+```
+◆  Use TypeScript?
+│  ● Yes / ○ No
+```
+```bash
+clrun key <id> enter              # Accept default (Yes)
+clrun key <id> right enter        # Switch to No, confirm
+```
+
+### Readline — send text directly
+```
+package name: (my-project)
+```
+```bash
+clrun <id> "custom-name"          # Custom value
+clrun <id> ""                     # Accept default (empty = Enter)
+```
 
 ## Agent Workflow Pattern
 
 ```
-1. EXECUTE:  result = shell("clrun run \"npm test\"")
-2. PARSE:    terminal_id = json_parse(result).data.terminal_id
-3. WAIT:     sleep(2000)
-4. OBSERVE:  output = shell("clrun tail " + terminal_id + " --lines 50")
-5. DECIDE:   if output contains prompt → send input
-6. INPUT:    shell("clrun input " + terminal_id + " \"yes\"")
-7. VERIFY:   status = shell("clrun status")
-8. CLEANUP:  if done → shell("clrun kill " + terminal_id)
+1. EXECUTE   →  result = shell("clrun <command>")
+2. PARSE     →  terminal_id = yaml_parse(result).terminal_id
+3. OBSERVE   →  output = shell("clrun tail " + id + " --lines 30")
+4. IDENTIFY  →  what type of prompt is showing? (text/select/multi/confirm)
+5. INTERACT  →  shell("clrun <id> 'text'") or shell("clrun key <id> down enter")
+6. REPEAT    →  go to 3 until the task is complete
+7. VERIFY    →  status = shell("clrun status")
+8. CLEANUP   →  shell("clrun kill " + id)
 ```
+
+## Real-World Example: create-vue
+
+```bash
+# Start scaffolder
+clrun "npx create-vue@latest"
+
+# Text input → project name
+clrun <id> "my-vue-app"
+
+# Multi-select → pick TypeScript, Router, Pinia, Linter
+clrun key <id> space down down space down space down down down space down down enter
+
+# Multi-select → skip experimental features
+clrun key <id> enter
+
+# Confirm → keep example code (accept default)
+clrun key <id> enter
+
+# Shell commands → install and run
+clrun <id> "cd my-vue-app && npm install"
+clrun <id> "npm run dev"
+```
+
+## Real-World Example: create-vite (React + TypeScript)
+
+```bash
+clrun "npx create-vite@latest"
+clrun <id> "my-react-app"                  # Project name (text input)
+clrun key <id> down down enter             # Framework → React (select list)
+clrun key <id> enter                        # Variant → TypeScript (default)
+clrun key <id> enter                        # Install → Yes (confirm)
+```
+
+## Session States
+
+| State | Meaning | Can receive input? |
+|-------|---------|--------------------|
+| `running` | PTY is active | Yes |
+| `suspended` | Idle timeout, env saved | Yes (auto-restores) |
+| `exited` | Command finished | No |
+| `killed` | Manually terminated | No |
+| `detached` | Crashed/orphaned | No |
 
 ## Queue Behavior
 
@@ -71,22 +174,18 @@ Returns: `{ ok: true, data: { terminal_id, status: "killed" } }`
 | Override mode | Cancels all pending, sends immediately |
 | Processing interval | 200ms |
 
-## Session States
-
-- `running` — active, accepts input
-- `exited` — completed, has exit code
-- `killed` — terminated by agent
-- `detached` — orphaned after crash, read-only
-
 ## Key Rules for Agents
 
-1. **Always parse JSON** — never interpret output as plain text
-2. **Store terminal_ids** — you need them for all subsequent operations
-3. **Check status before input** — don't send input to exited/detached sessions
-4. **Use priority for ordered multi-input** — higher number = sent first
-5. **Use override for emergencies** — cancels pending queue
-6. **Poll tail for output** — the buffer is append-only and always current
-7. **Handle detached gracefully** — create new sessions, don't retry
+1. **Use `clrun key` for TUI prompts** — select lists, checkboxes, confirms
+2. **Use `clrun <id> "text"` for text prompts** — readline and text fields
+3. **Read the `hints`** in every response — they tell you exactly what to do next
+4. **Read the `warnings`** — they catch quoting errors and output artifacts
+5. **Single-quote `$` variables** — `clrun <id> 'echo $MY_VAR'`
+6. **Count items from top** for select lists — target position minus 1 = number of `down` presses
+7. **Accept defaults with `key enter`** — not empty text for TUI prompts
+8. **Parse YAML** — all responses are structured YAML, never plain text
+9. **Store terminal_ids** — needed for all subsequent operations
+10. **Just send input to suspended sessions** — they auto-restore, no pre-check needed
 
 ## File Structure
 
@@ -96,11 +195,3 @@ All state in `.clrun/` at project root:
 - `buffers/*.log` — raw PTY output
 - `ledger/events.log` — audit trail
 - `skills/*.md` — this file and others
-
-## Git-Trackable Execution History
-
-The ledger at `.clrun/ledger/events.log` records all execution events
-as newline-delimited JSON. Committing this file to git enables:
-- Historical reasoning about past executions
-- Team visibility into agent actions
-- Debugging failed automation sequences

@@ -2,17 +2,25 @@ import { resolveProjectRoot } from '../utils/paths';
 import { success, fail } from '../utils/output';
 import { readSession, updateSession, isPtyAlive } from '../pty/pty-manager';
 import { logEvent } from '../ledger/ledger';
+import { sessionNotFoundError } from '../utils/validate';
 
 export async function killCommand(terminalId: string): Promise<void> {
   const projectRoot = resolveProjectRoot();
 
   const session = readSession(terminalId, projectRoot);
   if (!session) {
-    fail(`Session not found: ${terminalId}`);
+    fail(sessionNotFoundError(terminalId));
   }
 
   if (session!.status === 'exited' || session!.status === 'killed') {
-    fail(`Session already terminated (status: ${session!.status})`);
+    fail({
+      error: `Session already terminated (status: ${session!.status})`,
+      hints: {
+        read_output: `clrun tail ${terminalId} --lines 50`,
+        start_new: 'clrun <command>',
+        check_status: 'clrun status',
+      },
+    });
   }
 
   let workerKilled = false;

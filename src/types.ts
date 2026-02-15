@@ -1,6 +1,12 @@
 // ─── Session ────────────────────────────────────────────────────────────────
 
-export type SessionStatus = 'running' | 'exited' | 'detached' | 'killed';
+export type SessionStatus = 'running' | 'exited' | 'detached' | 'killed' | 'suspended';
+
+export interface SavedState {
+  cwd: string;
+  env: Record<string, string>;
+  captured_at: string;
+}
 
 export interface SessionMetadata {
   terminal_id: string;
@@ -14,6 +20,7 @@ export interface SessionMetadata {
   queue_length: number;
   last_exit_code: number | null;
   last_activity_at: string;
+  saved_state?: SavedState;
 }
 
 // ─── Queue ──────────────────────────────────────────────────────────────────
@@ -55,10 +62,13 @@ export type LedgerEventType =
   | 'session.exited'
   | 'session.killed'
   | 'session.detached'
+  | 'session.suspended'
+  | 'session.restored'
   | 'input.queued'
   | 'input.sent'
   | 'input.cancelled'
   | 'input.override'
+  | 'key.sent'
   | 'skills.installed'
   | 'error';
 

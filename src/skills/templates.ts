@@ -9,7 +9,11 @@ export const CLRUN_SKILL = `# clrun — CLI Skill Reference
 
 \`clrun\` is a project-scoped, persistent, deterministic CLI execution substrate
 designed for AI coding agents. It provides interactive PTY sessions with queued
-input, priority control, and crash recovery.
+input, priority control, keystroke navigation, and crash recovery.
+
+All responses are **structured YAML** with contextual \`hints\` that tell you
+exactly what to do next. Every error includes recovery steps. Every success
+includes the full set of valid next actions.
 
 ## Installation
 
@@ -21,65 +25,73 @@ npx clrun <command>
 
 ## Commands
 
-### Run a Command
+### Run a Command (bare shorthand)
 
 \`\`\`bash
+clrun <command>
 clrun run "<command>"
 \`\`\`
 
-Creates a new interactive PTY session. Returns JSON with \`terminal_id\`.
+Creates a new interactive PTY session. Returns YAML with \`terminal_id\`.
+The session starts in the **current working directory**.
 
-**Example:**
+**Examples:**
 \`\`\`bash
-clrun run "npm init"
+clrun npm init
+clrun "npx create-vue@latest"
+clrun run "docker compose up"
 \`\`\`
 
-**Response:**
-\`\`\`json
-{
-  "ok": true,
-  "data": {
-    "terminal_id": "a1b2c3d4-...",
-    "command": "npm init",
-    "status": "running",
-    "pid": 12345
-  }
-}
-\`\`\`
-
-### Send Input
+### Send Text Input
 
 \`\`\`bash
-clrun input <terminal_id> "<input>" [--priority <n>] [--override]
+clrun <terminal_id> "<text>"
+clrun input <terminal_id> "<text>" [--priority <n>] [--override]
 \`\`\`
 
-Queue input to a running terminal session.
+Sends text to a running session followed by Enter. Use the bare shorthand
+(\`clrun <id> "text"\`) for quick input, or \`clrun input\` for priority/override.
 
 - **--priority <n>**: Higher number = higher priority (default: 0)
 - **--override**: Cancel all pending inputs, send this immediately
 
 **Examples:**
 \`\`\`bash
-clrun input abc123 "yes"
-clrun input abc123 "yes" --priority 10
+clrun abc123 "my-project-name"
+clrun abc123 "yes"
 clrun input abc123 "force-reset" --override
 \`\`\`
 
-### View Output (tail)
+### Send Keystrokes (for TUI navigation)
 
 \`\`\`bash
-clrun tail <terminal_id> [--lines <n>]
+clrun key <terminal_id> <key> [<key>...]
 \`\`\`
 
-Returns the last N lines of terminal output (default: 50).
+Sends named keystrokes to navigate TUI prompts — select lists, multi-select
+checkboxes, confirm dialogs, and more. Keys are sent as raw escape sequences
+**without** a trailing Enter (unless you include \`enter\` explicitly).
 
-### View Output (head)
+**Available keys:**
+\`up\`, \`down\`, \`left\`, \`right\`, \`enter\`, \`tab\`, \`escape\`, \`space\`,
+\`backspace\`, \`delete\`, \`home\`, \`end\`, \`pageup\`, \`pagedown\`,
+\`ctrl-c\`, \`ctrl-d\`, \`ctrl-z\`, \`ctrl-l\`, \`ctrl-a\`, \`ctrl-e\`, \`y\`, \`n\`
+
+**Examples:**
+\`\`\`bash
+clrun key abc123 down down enter       # Navigate a select list → pick 3rd item
+clrun key abc123 space down space enter # Toggle 1st + 2nd checkbox, confirm
+clrun key abc123 enter                  # Accept the default / confirm
+clrun key abc123 ctrl-c                 # Interrupt/cancel the running process
+\`\`\`
+
+### View Output
 
 \`\`\`bash
-clrun head <terminal_id> [--lines <n>]
+clrun tail <terminal_id> [--lines <n>]   # Last N lines (default: 50)
+clrun head <terminal_id> [--lines <n>]   # First N lines (default: 50)
+clrun <terminal_id>                       # Shorthand for tail
 \`\`\`
-
-Returns the first N lines of terminal output (default: 50).
 
 ### Check Status
 
@@ -87,7 +99,7 @@ Returns the first N lines of terminal output (default: 50).
 clrun status
 \`\`\`
 
-Returns JSON with all terminal sessions and their states.
+Returns YAML with all terminal sessions, states, and queue depths.
 
 ### Kill a Session
 
@@ -97,46 +109,229 @@ clrun kill <terminal_id>
 
 Terminates a running PTY session.
 
-## Queue System
+## Interacting with TUI Prompts
 
-The input queue is **deterministic**:
+Modern CLI tools use rich TUI frameworks (@clack/prompts, inquirer, etc.) that
+render interactive widgets. Here's how to handle each type:
 
-1. Inputs are sorted by **priority DESC** (higher first)
-2. Ties are broken by **created_at ASC** (first-in, first-out)
-3. Override mode cancels all pending inputs
+### Text Input Prompts
 
-### Queue Entry States
-- \`queued\` — waiting to be sent
-- \`sent\` — delivered to the PTY
-- \`cancelled\` — cancelled by override
+\`\`\`
+◆  Project name:
+│  default-value
+\`\`\`
+
+**Action:** Send text — it replaces the default and presses Enter automatically.
+\`\`\`bash
+clrun <id> "my-project"
+\`\`\`
+
+To **accept the default**, send an empty Enter:
+\`\`\`bash
+clrun key <id> enter
+\`\`\`
+
+### Single-Select Lists
+
+\`\`\`
+◆  Select a framework:
+│  ● Vanilla       ← currently highlighted
+│  ○ Vue
+│  ○ React
+│  ○ Svelte
+\`\`\`
+
+**Action:** Use \`down\`/\`up\` to move the highlight, then \`enter\` to select.
+\`\`\`bash
+clrun key <id> down down enter    # Selects "React" (3rd item)
+\`\`\`
+
+To **accept the default** (first item):
+\`\`\`bash
+clrun key <id> enter
+\`\`\`
+
+### Multi-Select (Checkbox) Lists
+
+\`\`\`
+◆  Select features: (space to select, enter to confirm)
+│  ◻ TypeScript        ← cursor here
+│  ◻ Router
+│  ◻ Linter
+│  ◻ Prettier
+\`\`\`
+
+**Action:** Use \`space\` to toggle each checkbox, \`down\`/\`up\` to move, then \`enter\` to confirm.
+\`\`\`bash
+# Select TypeScript (1st), skip Router, select Linter (3rd), confirm:
+clrun key <id> space down down space enter
+\`\`\`
+
+To **skip all** (select none):
+\`\`\`bash
+clrun key <id> enter
+\`\`\`
+
+### Yes/No Confirm Prompts
+
+\`\`\`
+◆  Use TypeScript?
+│  ● Yes / ○ No
+\`\`\`
+
+**Action:** \`enter\` accepts the highlighted default. Use \`left\`/\`right\` or
+\`down\`/\`up\` to switch between Yes/No first if needed.
+\`\`\`bash
+clrun key <id> enter              # Accept default (Yes)
+clrun key <id> right enter        # Switch to No, then confirm
+\`\`\`
+
+### Readline-Style Prompts (simple text)
+
+\`\`\`
+package name: (my-project)
+\`\`\`
+
+**Action:** Send text directly — these are basic line-buffered prompts.
+\`\`\`bash
+clrun <id> "my-custom-name"     # Type and press Enter
+clrun <id> ""                    # Accept the default (just Enter)
+\`\`\`
+
+## Real-World Interactive Workflows
+
+### Scaffolding a Vue App (create-vue)
+
+\`\`\`bash
+clrun "npx create-vue@latest"
+# → Project name prompt
+clrun <id> "my-vue-app"
+# → Feature multi-select (TypeScript, Router, Pinia, Linter, etc.)
+clrun key <id> space down down space down space down down down space down down enter
+# → Experimental features multi-select
+clrun key <id> enter              # Skip all
+# → Blank project confirm
+clrun key <id> enter              # Accept default (No)
+# → Scaffolding done! Install deps:
+clrun <id> "cd my-vue-app && npm install"
+clrun <id> "npm run dev"
+\`\`\`
+
+### Scaffolding a React App (create-vite)
+
+\`\`\`bash
+clrun "npx create-vite@latest"
+# → Project name prompt
+clrun <id> "my-react-app"
+# → Framework select list (Vanilla, Vue, React, ...)
+clrun key <id> down down enter    # Select React
+# → Variant select list (TypeScript, JS, SWC, ...)
+clrun key <id> enter              # Accept default (TypeScript)
+# → Install confirm
+clrun key <id> enter              # Yes
+\`\`\`
+
+### Running npm init
+
+\`\`\`bash
+clrun "npm init"
+# → package name:
+clrun <id> "my-package"
+# → version:
+clrun <id> ""                    # Accept default (1.0.0)
+# → description:
+clrun <id> "A cool project"
+# → entry point:
+clrun <id> ""                    # Accept default
+# Continue for each prompt...
+\`\`\`
+
+### Monitoring a Dev Server
+
+\`\`\`bash
+clrun "npm run dev"
+# → Wait for server to start, then read output
+clrun tail <id> --lines 20
+# → Look for "ready" / URL in output
+# Session stays alive — the dev server keeps running
+clrun kill <id>                  # Stop when done
+\`\`\`
 
 ## Session States
 
 | State | Meaning |
 |-------|---------|
 | \`running\` | PTY is active and accepting input |
+| \`suspended\` | Idle timeout — env saved, PTY shut down, auto-restores on input |
 | \`exited\` | Command completed (check \`last_exit_code\`) |
 | \`killed\` | Session was manually terminated |
 | \`detached\` | Session lost due to crash (not recoverable) |
 
-## Detached Sessions
+## Suspended Sessions (Auto-Restore)
 
-When \`clrun\` detects a previously running session whose process has died:
-- It marks the session as \`detached\`
-- The buffer log is still readable
-- The session cannot be resumed
-- You should inspect the buffer and start a new session if needed
+Sessions automatically suspend after **5 minutes of inactivity**:
+- Environment variables and working directory are captured
+- Buffer logs are preserved (\`clrun tail\` still works)
+- **Sending any input auto-restores the session transparently**
+- The response includes \`restored: true\`
+
+\`\`\`bash
+# Session suspended after idle timeout
+clrun tail <id>                  # Still works — reads preserved buffer
+clrun <id> echo $MY_VAR          # Auto-restores, runs command, returns output
+\`\`\`
+
+## Queue System
+
+Inputs are queued deterministically:
+1. **Priority DESC** — higher number sends first
+2. **FIFO** for equal priority
+3. **Override** cancels all pending and sends immediately
+
+## Agent-Native Response Design
+
+Every clrun response includes:
+
+- **\`hints\`** — the complete set of valid next actions as copy-pasteable commands
+- **\`warnings\`** — issues detected with your input or the output (e.g. likely
+  shell-expanded variables, residual ANSI codes)
+- **Rich errors** — not just an error message, but the reason, alternatives,
+  and exact recovery commands
+
+### Example Error Response
+
+\`\`\`yaml
+error: "Session not found: abc123..."
+hints:
+  list_sessions: clrun status
+  start_new: clrun <command>
+  active_sessions: f5e6d7c8-...
+  note: Found 1 active session(s).
+\`\`\`
+
+### Example Warning
+
+\`\`\`yaml
+input: ""
+warnings:
+  - "Input is empty. If you intended to send a shell variable like $MY_VAR,
+     use single quotes: clrun <id> 'echo $MY_VAR'"
+\`\`\`
 
 ## Best Practices for AI Agents
 
-1. **Always capture the \`terminal_id\`** from \`clrun run\` responses
-2. **Poll with \`clrun tail\`** to observe command output
-3. **Use priority** when multiple inputs are queued
-4. **Use override** when you need to abort current flow
-5. **Check status** before sending input to verify the session is \`running\`
-6. **Handle \`detached\` sessions** — don't try to send input to them
-7. **Parse JSON strictly** — all responses are structured JSON
-8. **Don't assume command completion** — check \`status\` and \`last_exit_code\`
+1. **Use bare shorthand** — \`clrun <command>\` to start, \`clrun <id> "text"\` to interact
+2. **Use \`clrun key\` for TUI navigation** — arrow keys, space to toggle, enter to confirm
+3. **Read the \`hints\`** — every response tells you exactly what to do next
+4. **Read the \`warnings\`** — they catch quoting errors, empty inputs, and output artifacts
+5. **Use single quotes for \`$\` variables** — \`clrun <id> 'echo $MY_VAR'\` prevents shell expansion
+6. **Parse YAML** — all responses are structured YAML, never plain text
+7. **Poll with \`tail\`** to observe progress and detect prompts
+8. **Use \`key enter\` to accept defaults** — don't send empty text for TUI prompts
+9. **Use \`key space\` to toggle checkboxes** in multi-select lists
+10. **Use priority** when queuing multiple inputs
+11. **Use override** for emergency abort / flow change
+12. **Just send input to suspended sessions** — they auto-restore, no pre-check needed
 
 ## State Files
 
@@ -150,124 +345,216 @@ All state lives in \`.clrun/\` within the project root:
   ledger/events.log     # Event audit trail
   skills/               # This file and others
 \`\`\`
-
-## Git Integration Potential
-
-The \`.clrun/ledger/events.log\` file can be committed to git to enable:
-- Cross-session reasoning about execution history
-- Team-wide visibility into agent actions
-- Audit trails for debugging
-
-Add \`.clrun/\` to \`.gitignore\` to exclude, or selectively commit the ledger.
 `;
 
 export const CLAUDE_CODE_SKILL = `# clrun — Claude Code Integration Skill
 
 ## Purpose
 
-This skill teaches Claude Code how to use \`clrun\` for interactive command execution.
-Use \`clrun\` whenever you need to run commands that require interactive input,
-long-running processes, or deterministic execution control.
+This skill teaches Claude Code how to use \`clrun\` for interactive command
+execution. Use \`clrun\` whenever you need to run commands that require
+interactive input, TUI navigation, long-running processes, or deterministic
+execution control.
 
 ## When to Use clrun
 
-- Commands that prompt for user input (e.g., \`npm init\`, \`git commit\`)
-- Long-running processes you need to monitor (e.g., \`npm test\`, \`docker build\`)
-- When you need to queue multiple inputs in advance
-- When you need override/abort capability
+- **Interactive scaffolders** — create-vue, create-vite, create-astro, npm init
+- **TUI tools** with select lists, checkboxes, and confirm dialogs
+- **Long-running processes** — dev servers, test suites, docker builds
+- **Stateful sessions** — setting env vars, then querying them later
+- **Any command that prompts** for user input
 
-## Core Workflow
+## Quick Reference
 
-### 1. Start a Command
+| Action | Command |
+|--------|---------|
+| Start a session | \`clrun <command>\` |
+| Send text + Enter | \`clrun <id> "text"\` |
+| Navigate TUI | \`clrun key <id> down enter\` |
+| Toggle checkbox | \`clrun key <id> space\` |
+| Accept default | \`clrun key <id> enter\` |
+| View latest output | \`clrun tail <id>\` or \`clrun <id>\` |
+| Check all sessions | \`clrun status\` |
+| Kill a session | \`clrun kill <id>\` |
+| Interrupt (Ctrl+C) | \`clrun key <id> ctrl-c\` |
 
-\`\`\`bash
-clrun run "npm init -y"
-\`\`\`
+## Two Input Modes
 
-**Always** parse the JSON response and store the \`terminal_id\`.
+### Text Input (\`clrun <id> "text"\`)
 
-### 2. Monitor Output
-
-\`\`\`bash
-clrun tail <terminal_id> --lines 30
-\`\`\`
-
-Check the output to understand what the command is doing or waiting for.
-
-### 3. Send Input When Needed
-
-\`\`\`bash
-clrun input <terminal_id> "yes"
-\`\`\`
-
-Send responses to interactive prompts.
-
-### 4. Check Session Status
+Sends text followed by Enter (\\r). Use for:
+- Typing text into prompts (project names, descriptions, etc.)
+- Sending shell commands to the running session
+- Responding to simple yes/no or readline-style prompts
 
 \`\`\`bash
-clrun status
+clrun <id> "my-project-name"    # Type text and press Enter
+clrun <id> ""                    # Just press Enter (accept default for readline prompts)
 \`\`\`
 
-Verify session state, exit codes, and active sessions.
+### Keystroke Input (\`clrun key <id> <keys...>\`)
 
-## Detecting Waiting Input
-
-When a command is waiting for input:
-1. Run \`clrun tail <id> --lines 10\`
-2. Look for patterns: \`?\`, \`:\`, \`(y/n)\`, \`>\`, \`Enter\`, \`Press\`
-3. The session status will still be \`running\` with no recent output
-
-## Using Override
-
-When something goes wrong and you need to force a new input:
+Sends raw keystrokes. Use for:
+- Navigating select lists (\`up\`, \`down\`, \`enter\`)
+- Toggling checkboxes (\`space\`)
+- Accepting TUI defaults (\`enter\`)
+- Switching Yes/No (\`left\`, \`right\`)
+- Interrupting processes (\`ctrl-c\`)
 
 \`\`\`bash
-clrun input <terminal_id> "q" --override
+clrun key <id> down down enter           # Select 3rd item in a list
+clrun key <id> space down space enter    # Toggle checkboxes 1 and 2, confirm
+clrun key <id> enter                      # Accept default / confirm
 \`\`\`
 
-This cancels ALL pending queued inputs and sends the override immediately.
+**Available keys:**
+\`up\`, \`down\`, \`left\`, \`right\`, \`enter\`, \`tab\`, \`escape\`, \`space\`,
+\`backspace\`, \`delete\`, \`home\`, \`end\`, \`pageup\`, \`pagedown\`,
+\`ctrl-c\`, \`ctrl-d\`, \`ctrl-z\`, \`ctrl-l\`, \`ctrl-a\`, \`ctrl-e\`, \`y\`, \`n\`
 
-## Priority Queuing
+## Identifying Prompt Types
 
-When you need to send multiple inputs in order:
+When you \`tail\` a session and see a prompt, identify its type to choose the
+right input method:
+
+| You see | Type | Action |
+|---------|------|--------|
+| \`◆  Project name: │  default\` | Text input | \`clrun <id> "name"\` or \`clrun key <id> enter\` |
+| \`● Option1  ○ Option2  ○ Option3\` | Single-select | \`clrun key <id> down... enter\` |
+| \`◻ Option1  ◻ Option2  ◻ Option3\` | Multi-select | \`clrun key <id> space down... enter\` |
+| \`● Yes / ○ No\` | Confirm | \`clrun key <id> enter\` or \`clrun key <id> right enter\` |
+| \`(y/n)\`, \`[Y/n]\` | Simple confirm | \`clrun <id> "y"\` or \`clrun <id> "n"\` |
+| \`package name: (default)\` | Readline | \`clrun <id> "value"\` or \`clrun <id> ""\` |
+
+## Counting Items in Select Lists
+
+When navigating a select list, count the items from the top to find your target:
+- The **first item** is always highlighted by default (●)
+- Each \`down\` moves one position
+- To select the Nth item: send N-1 \`down\` presses, then \`enter\`
+
+\`\`\`
+◆  Select a framework:
+│  ● Vanilla       ← position 1 (0 downs)
+│  ○ Vue           ← position 2 (1 down)
+│  ○ React         ← position 3 (2 downs)
+│  ○ Svelte        ← position 4 (3 downs)
+\`\`\`
 
 \`\`\`bash
-clrun input <id> "first-answer" --priority 3
-clrun input <id> "second-answer" --priority 2
-clrun input <id> "third-answer" --priority 1
+clrun key <id> down down enter   # Selects React (2 downs from top)
 \`\`\`
 
-Higher priority numbers are sent first.
+## Multi-Select Pattern
 
-## Error Handling
+For multi-select, plan your moves as a sequence of \`space\` (toggle) and \`down\`
+(skip) from top to bottom, ending with \`enter\`:
 
-Always check the \`ok\` field in responses:
-
-\`\`\`json
-{ "ok": false, "error": "Session not found" }
+\`\`\`
+◆  Select features:
+│  ◻ TypeScript     ← want this ✓
+│  ◻ JSX            ← skip
+│  ◻ Router         ← want this ✓
+│  ◻ Pinia          ← want this ✓
+│  ◻ Vitest         ← skip
+│  ◻ Linter         ← want this ✓
+│  ◻ Prettier       ← skip
 \`\`\`
 
-Common errors:
-- Session not found (wrong terminal_id)
-- Session not running (already exited/killed)
-- No .clrun directory (run from project root)
+\`\`\`bash
+clrun key <id> space down down space down space down down space down down enter
+#              TS    skip  skip  Router Pinia skip  skip  Linter skip  skip  confirm
+\`\`\`
 
-## Lifecycle Management
+## Real-World Example: create-vue
 
-1. **Start** → \`clrun run "cmd"\`
-2. **Monitor** → \`clrun tail <id>\`
-3. **Interact** → \`clrun input <id> "response"\`
-4. **Verify** → \`clrun status\`
-5. **Clean up** → \`clrun kill <id>\` (if needed)
+\`\`\`bash
+# 1. Start the scaffolder
+clrun "npx create-vue@latest"
+# Read the terminal_id from the response
 
-## Important Notes
+# 2. Wait for first prompt, then tail
+clrun tail <id> --lines 20
+# → ◆  Project name: │  vue-project
 
-- All output is **JSON only** — parse it, don't read it as text
-- Sessions persist across your tool calls — use stored terminal_ids
-- Buffer logs are **append-only** — tail gives you the latest state
-- Detached sessions cannot receive input — start a new one
-- The queue processes inputs every 200ms
-- Override is immediate — use it for emergency control flow changes
+# 3. Enter project name
+clrun <id> "my-vue-app"
+# → ◆  Select features: ◻ TypeScript ◻ Router ...
+
+# 4. Toggle features (TypeScript + Router + Pinia + Linter)
+clrun key <id> space down down space down space down down down space down down enter
+
+# 5. Skip experimental features
+clrun key <id> enter
+
+# 6. Accept "keep example code" default
+clrun key <id> enter
+
+# 7. Install and run
+clrun <id> "cd my-vue-app && npm install"
+# Wait for install...
+clrun tail <id> --lines 10
+clrun <id> "npm run dev"
+\`\`\`
+
+## Real-World Example: create-vite (React)
+
+\`\`\`bash
+clrun "npx create-vite@latest"
+clrun <id> "my-react-app"                    # Project name
+clrun key <id> down down enter               # Select React (3rd)
+clrun key <id> enter                          # TypeScript (default)
+clrun key <id> enter                          # Accept install
+# Wait for deps + dev server startup
+clrun tail <id> --lines 15
+\`\`\`
+
+## Lifecycle Pattern
+
+\`\`\`
+1. START    →  clrun <command>                    → get terminal_id
+2. OBSERVE  →  clrun tail <id>                    → read output, identify prompt
+3. INTERACT →  clrun <id> "text" / clrun key <id> → send input
+4. REPEAT   →  go to 2 until done
+5. VERIFY   →  clrun status                       → check exit codes
+6. CLEANUP  →  clrun kill <id>                    → if needed
+\`\`\`
+
+## Reading Responses
+
+All responses are YAML. Key fields:
+
+- **\`terminal_id\`** — store this, you need it for everything
+- **\`output\`** — cleaned terminal output (ANSI stripped, prompts filtered)
+- **\`status\`** — \`running\`, \`suspended\`, \`exited\`, \`killed\`, \`detached\`
+- **\`hints\`** — the exact commands you can run next (copy-pasteable)
+- **\`warnings\`** — issues with your input or detected output artifacts
+- **\`restored\`** — \`true\` if the session was auto-restored from suspension
+
+## Shell Variable Quoting
+
+When sending commands containing \`$\` variables, use **single quotes** to prevent
+your shell from expanding them before clrun receives them:
+
+\`\`\`bash
+clrun <id> 'echo $MY_VAR'          # Correct — variable reaches the session
+clrun <id> "echo $MY_VAR"          # Wrong — your shell expands it first
+\`\`\`
+
+## Suspended Sessions
+
+Sessions suspend after 5 minutes of inactivity. Just send input normally — they
+auto-restore transparently. No need to check status first.
+
+## Important Rules
+
+1. **Parse YAML** — all responses are structured YAML
+2. **Read the hints** — they tell you exactly what to do next
+3. **Use \`key\` for TUI prompts** — never type escape sequences as text
+4. **Use text input for readline prompts** — \`clrun <id> "text"\`
+5. **Single-quote \`$\` variables** — prevents premature shell expansion
+6. **Accept defaults with \`key enter\`** — not with empty text for TUI prompts
+7. **Count items from top** for select lists — N-1 \`down\` presses for item N
 `;
 
 export const OPENCLAW_SKILL = `# clrun — OpenClaw Integration Skill
@@ -281,58 +568,161 @@ for interactive, persistent command execution within coding projects.
 
 \`clrun\` is a project-scoped CLI execution substrate. It creates interactive
 terminal sessions that persist independently of your agent process, with
-deterministic input queuing and priority control.
+deterministic input queuing, keystroke navigation, and priority control.
+
+All responses are **structured YAML** with \`hints\` (valid next actions) and
+\`warnings\` (detected issues).
 
 ## Command Reference
 
 ### Create Session
+\`\`\`bash
+clrun <command>                   # Bare shorthand
+clrun run "<shell_command>"       # Explicit
 \`\`\`
-clrun run "<shell_command>"
-\`\`\`
-Returns: \`{ ok: true, data: { terminal_id, command, status, pid } }\`
 
-### Queue Input
+### Send Text Input
+\`\`\`bash
+clrun <id> "<text>"               # Bare shorthand (sends text + Enter)
+clrun input <id> "<text>" [--priority N] [--override]
 \`\`\`
-clrun input <terminal_id> "<text>" [--priority N] [--override]
-\`\`\`
-Returns: \`{ ok: true, data: { queue_id, status, mode } }\`
 
-### Read Output (Latest)
+### Send Keystrokes (TUI navigation)
+\`\`\`bash
+clrun key <id> <key> [<key>...]
 \`\`\`
-clrun tail <terminal_id> [--lines N]
-\`\`\`
-Returns: \`{ ok: true, data: { terminal_id, lines, total_lines } }\`
+Keys: \`up\`, \`down\`, \`left\`, \`right\`, \`enter\`, \`tab\`, \`escape\`, \`space\`,
+\`backspace\`, \`delete\`, \`home\`, \`end\`, \`pageup\`, \`pagedown\`,
+\`ctrl-c\`, \`ctrl-d\`, \`ctrl-z\`, \`ctrl-l\`, \`ctrl-a\`, \`ctrl-e\`, \`y\`, \`n\`
 
-### Read Output (Beginning)
+### Read Output
+\`\`\`bash
+clrun tail <id> [--lines N]       # Latest output (default: 50)
+clrun head <id> [--lines N]       # First output (default: 50)
+clrun <id>                        # Shorthand for tail
 \`\`\`
-clrun head <terminal_id> [--lines N]
-\`\`\`
-Returns: \`{ ok: true, data: { terminal_id, lines, total_lines } }\`
 
-### Runtime Status
+### Status & Control
+\`\`\`bash
+clrun status                      # All sessions
+clrun kill <id>                   # Terminate session
 \`\`\`
-clrun status
-\`\`\`
-Returns: \`{ ok: true, data: { sessions: [...], detached: [...] } }\`
 
-### Terminate Session
+## Prompt Type Identification & Handling
+
+When you observe a prompt in \`tail\` output, identify its type:
+
+### Text Input — send text
 \`\`\`
-clrun kill <terminal_id>
+◆  Project name:
+│  default-value
 \`\`\`
-Returns: \`{ ok: true, data: { terminal_id, status: "killed" } }\`
+\`\`\`bash
+clrun <id> "my-project"           # Type custom name
+clrun key <id> enter              # Accept the default
+\`\`\`
+
+### Single-Select — navigate with arrows, confirm with enter
+\`\`\`
+◆  Select a framework:
+│  ● Vanilla       ← 0 downs
+│  ○ Vue           ← 1 down
+│  ○ React         ← 2 downs
+│  ○ Svelte        ← 3 downs
+\`\`\`
+\`\`\`bash
+clrun key <id> down down enter    # Select React (2 downs + enter)
+clrun key <id> enter              # Accept default (Vanilla)
+\`\`\`
+
+### Multi-Select — toggle with space, navigate with arrows, confirm with enter
+\`\`\`
+◆  Select features:
+│  ◻ TypeScript    ← toggle with space
+│  ◻ Router
+│  ◻ Linter
+│  ◻ Prettier
+\`\`\`
+\`\`\`bash
+# Select TypeScript + Linter (1st and 3rd):
+clrun key <id> space down down space enter
+#              TS    skip  skip  Linter confirm
+\`\`\`
+
+### Confirm — enter to accept default, arrows to switch
+\`\`\`
+◆  Use TypeScript?
+│  ● Yes / ○ No
+\`\`\`
+\`\`\`bash
+clrun key <id> enter              # Accept default (Yes)
+clrun key <id> right enter        # Switch to No, confirm
+\`\`\`
+
+### Readline — send text directly
+\`\`\`
+package name: (my-project)
+\`\`\`
+\`\`\`bash
+clrun <id> "custom-name"          # Custom value
+clrun <id> ""                     # Accept default (empty = Enter)
+\`\`\`
 
 ## Agent Workflow Pattern
 
 \`\`\`
-1. EXECUTE:  result = shell("clrun run \\"npm test\\"")
-2. PARSE:    terminal_id = json_parse(result).data.terminal_id
-3. WAIT:     sleep(2000)
-4. OBSERVE:  output = shell("clrun tail " + terminal_id + " --lines 50")
-5. DECIDE:   if output contains prompt → send input
-6. INPUT:    shell("clrun input " + terminal_id + " \\"yes\\"")
-7. VERIFY:   status = shell("clrun status")
-8. CLEANUP:  if done → shell("clrun kill " + terminal_id)
+1. EXECUTE   →  result = shell("clrun <command>")
+2. PARSE     →  terminal_id = yaml_parse(result).terminal_id
+3. OBSERVE   →  output = shell("clrun tail " + id + " --lines 30")
+4. IDENTIFY  →  what type of prompt is showing? (text/select/multi/confirm)
+5. INTERACT  →  shell("clrun <id> 'text'") or shell("clrun key <id> down enter")
+6. REPEAT    →  go to 3 until the task is complete
+7. VERIFY    →  status = shell("clrun status")
+8. CLEANUP   →  shell("clrun kill " + id)
 \`\`\`
+
+## Real-World Example: create-vue
+
+\`\`\`bash
+# Start scaffolder
+clrun "npx create-vue@latest"
+
+# Text input → project name
+clrun <id> "my-vue-app"
+
+# Multi-select → pick TypeScript, Router, Pinia, Linter
+clrun key <id> space down down space down space down down down space down down enter
+
+# Multi-select → skip experimental features
+clrun key <id> enter
+
+# Confirm → keep example code (accept default)
+clrun key <id> enter
+
+# Shell commands → install and run
+clrun <id> "cd my-vue-app && npm install"
+clrun <id> "npm run dev"
+\`\`\`
+
+## Real-World Example: create-vite (React + TypeScript)
+
+\`\`\`bash
+clrun "npx create-vite@latest"
+clrun <id> "my-react-app"                  # Project name (text input)
+clrun key <id> down down enter             # Framework → React (select list)
+clrun key <id> enter                        # Variant → TypeScript (default)
+clrun key <id> enter                        # Install → Yes (confirm)
+\`\`\`
+
+## Session States
+
+| State | Meaning | Can receive input? |
+|-------|---------|--------------------|
+| \`running\` | PTY is active | Yes |
+| \`suspended\` | Idle timeout, env saved | Yes (auto-restores) |
+| \`exited\` | Command finished | No |
+| \`killed\` | Manually terminated | No |
+| \`detached\` | Crashed/orphaned | No |
 
 ## Queue Behavior
 
@@ -343,22 +733,18 @@ Returns: \`{ ok: true, data: { terminal_id, status: "killed" } }\`
 | Override mode | Cancels all pending, sends immediately |
 | Processing interval | 200ms |
 
-## Session States
-
-- \`running\` — active, accepts input
-- \`exited\` — completed, has exit code
-- \`killed\` — terminated by agent
-- \`detached\` — orphaned after crash, read-only
-
 ## Key Rules for Agents
 
-1. **Always parse JSON** — never interpret output as plain text
-2. **Store terminal_ids** — you need them for all subsequent operations
-3. **Check status before input** — don't send input to exited/detached sessions
-4. **Use priority for ordered multi-input** — higher number = sent first
-5. **Use override for emergencies** — cancels pending queue
-6. **Poll tail for output** — the buffer is append-only and always current
-7. **Handle detached gracefully** — create new sessions, don't retry
+1. **Use \`clrun key\` for TUI prompts** — select lists, checkboxes, confirms
+2. **Use \`clrun <id> "text"\` for text prompts** — readline and text fields
+3. **Read the \`hints\`** in every response — they tell you exactly what to do next
+4. **Read the \`warnings\`** — they catch quoting errors and output artifacts
+5. **Single-quote \`$\` variables** — \`clrun <id> 'echo $MY_VAR'\`
+6. **Count items from top** for select lists — target position minus 1 = number of \`down\` presses
+7. **Accept defaults with \`key enter\`** — not empty text for TUI prompts
+8. **Parse YAML** — all responses are structured YAML, never plain text
+9. **Store terminal_ids** — needed for all subsequent operations
+10. **Just send input to suspended sessions** — they auto-restore, no pre-check needed
 
 ## File Structure
 
@@ -368,12 +754,4 @@ All state in \`.clrun/\` at project root:
 - \`buffers/*.log\` — raw PTY output
 - \`ledger/events.log\` — audit trail
 - \`skills/*.md\` — this file and others
-
-## Git-Trackable Execution History
-
-The ledger at \`.clrun/ledger/events.log\` records all execution events
-as newline-delimited JSON. Committing this file to git enables:
-- Historical reasoning about past executions
-- Team visibility into agent actions
-- Debugging failed automation sequences
 `;

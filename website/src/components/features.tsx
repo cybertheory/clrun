@@ -50,9 +50,9 @@ const features = [
   },
   {
     icon: Braces,
-    title: "Structured JSON State",
+    title: "Structured YAML Output",
     description:
-      "Every command returns structured JSON. Every session, queue entry, and event is machine-readable. Built for programmatic consumption.",
+      "Every command returns structured YAML. Every session, queue entry, and event is machine-readable. Built for programmatic consumption.",
   },
   {
     icon: Cpu,

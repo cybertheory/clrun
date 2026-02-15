@@ -91,3 +91,52 @@ export function readRawBuffer(terminalId: string, projectRoot: string): string {
 
   return fs.readFileSync(filePath, 'utf-8');
 }
+
+/**
+ * Get the current buffer file size in bytes.
+ * Used to snapshot the position before sending a command.
+ */
+export function getBufferSize(terminalId: string, projectRoot: string): number {
+  const filePath = bufferPath(terminalId, projectRoot);
+
+  if (!fs.existsSync(filePath)) {
+    return 0;
+  }
+
+  return fs.statSync(filePath).size;
+}
+
+/**
+ * Read only NEW content appended to the buffer since a given byte offset.
+ * Returns the new content split into lines.
+ */
+export function readBufferSince(terminalId: string, offset: number, projectRoot: string): string[] {
+  const filePath = bufferPath(terminalId, projectRoot);
+
+  if (!fs.existsSync(filePath)) {
+    return [];
+  }
+
+  const fd = fs.openSync(filePath, 'r');
+  const stat = fs.fstatSync(fd);
+  const newBytes = stat.size - offset;
+
+  if (newBytes <= 0) {
+    fs.closeSync(fd);
+    return [];
+  }
+
+  const buf = Buffer.alloc(newBytes);
+  fs.readSync(fd, buf, 0, newBytes, offset);
+  fs.closeSync(fd);
+
+  const content = buf.toString('utf-8');
+  const lines = content.split('\n');
+
+  // Remove trailing empty line from split
+  if (lines.length > 0 && lines[lines.length - 1] === '') {
+    lines.pop();
+  }
+
+  return lines;
+}
