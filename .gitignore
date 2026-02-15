@@ -1,0 +1,23 @@
+node_modules/
+dist/
+.clrun/
+*.tsbuildinfo
+
+# Website
+website/.next/
+website/node_modules/
+website/out/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment
+.env
+.env.local
