@@ -83,18 +83,38 @@ program
     await killCommand(terminalId);
   }));
 
-// ─── Default: treat unknown args as a command to run ────────────────────────
+// ─── Smart routing: bare commands & terminal_id shorthand ───────────────────
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const knownCommands = new Set(['run', 'input', 'tail', 'head', 'status', 'kill', 'help']);
 
 const firstArg = process.argv[2];
 
 if (firstArg && !firstArg.startsWith('-') && !knownCommands.has(firstArg)) {
-  // Everything after `clrun` is the command: clrun echo hello world → "echo hello world"
-  const command = process.argv.slice(2).join(' ');
-  withErrorHandling(async () => {
-    await runCommand(command);
-  })();
+  if (UUID_RE.test(firstArg)) {
+    // clrun <terminal_id> echo $MY_VAR  →  send input to that session
+    const terminalId = firstArg;
+    const rest = process.argv.slice(3);
+
+    if (rest.length === 0) {
+      // clrun <terminal_id>  →  shorthand for tail
+      withErrorHandling(async () => {
+        await tailCommand(terminalId, { lines: 50 });
+      })();
+    } else {
+      // clrun <terminal_id> <anything>  →  send as input
+      const input = rest.join(' ');
+      withErrorHandling(async () => {
+        await inputCommand(terminalId, input, { priority: 0, override: false });
+      })();
+    }
+  } else {
+    // clrun echo hello world  →  run a new command
+    const command = process.argv.slice(2).join(' ');
+    withErrorHandling(async () => {
+      await runCommand(command);
+    })();
+  }
 } else {
   program.parse();
 }
