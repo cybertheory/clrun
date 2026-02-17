@@ -5,7 +5,7 @@ license: MIT
 metadata:
   author: cybertheory
   version: "1.0.1"
-compatibility: Requires Node.js >= 18. Works on macOS, Linux, and Windows.
+compatibility: Requires Node.js >= 18 or Python >= 3.9. Works on macOS and Linux. Node version also supports Windows.
 ---
 
 # clrun — The Interactive CLI for AI Agents
@@ -14,8 +14,14 @@ No more `--yes` flags or command retries. `clrun` gives you full control over in
 
 ## Install
 
+Node.js:
 ```bash
 npm install -g clrun
+```
+
+Python:
+```bash
+pip install clrun
 ```
 
 ## Core Commands

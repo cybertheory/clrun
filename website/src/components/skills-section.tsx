@@ -59,8 +59,12 @@ export function SkillsSection() {
             Built-in agent skills
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto mb-16">
-            On first run, clrun automatically installs structured skill files
-            into your project. Point your AI agent at{" "}
+            On first run — whether via{" "}
+            <code className="text-sm bg-zinc-800 px-2 py-1 rounded">npm</code>{" "}
+            or{" "}
+            <code className="text-sm bg-zinc-800 px-2 py-1 rounded">pip</code>{" "}
+            — clrun automatically installs structured skill files into your project.
+            Point your AI agent at{" "}
             <code className="text-sm bg-zinc-800 px-2 py-1 rounded">
               .clrun/skills/
             </code>{" "}

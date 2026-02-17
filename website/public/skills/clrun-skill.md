@@ -12,11 +12,18 @@ includes the full set of valid next actions.
 
 ## Installation
 
+Node.js:
 ```bash
 npm install -g clrun
-# or
-npx clrun <command>
+# or: npx clrun <command>
 ```
+
+Python:
+```bash
+pip install clrun
+```
+
+Both runtimes produce identical YAML output and use the same `.clrun/` state format.
 
 ## Commands
 

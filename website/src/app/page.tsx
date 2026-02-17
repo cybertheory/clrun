@@ -1,5 +1,6 @@
 import { Navbar } from "@/components/navbar";
 import { Hero } from "@/components/hero";
+import { Install } from "@/components/install";
 import { Features } from "@/components/features";
 import { AgentNative } from "@/components/agent-native";
 import { HowItWorks } from "@/components/how-it-works";
@@ -13,6 +14,7 @@ export default function Home() {
       <Navbar />
       <main className="min-h-screen">
         <Hero />
+        <Install />
         <Features />
         <AgentNative />
         <HowItWorks />

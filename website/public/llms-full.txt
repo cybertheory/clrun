@@ -5,12 +5,16 @@
 
 clrun gives AI agents full control over interactive terminal sessions — TUI prompts, select lists, checkboxes, confirms, long-running processes — with structured YAML responses, contextual hints, and auto-suspend/restore.
 
+Available as both **Node.js** and **Python** packages with identical CLI interfaces and YAML output.
+
 - GitHub: https://github.com/cybertheory/clrun
 - npm: https://www.npmjs.com/package/clrun
+- PyPI: https://pypi.org/project/clrun/
 - Website: https://clrun.dev
 
 ## Installation
 
+Node.js:
 ```
 npm install -g clrun
 ```
@@ -19,6 +23,18 @@ Or use without installing:
 ```
 npx clrun <command>
 ```
+
+Python:
+```
+pip install clrun
+```
+
+Or with pipx:
+```
+pipx install clrun
+```
+
+Both versions produce identical YAML output, use the same `.clrun/` state format, and install the same agent skills. The CLI commands are the same regardless of which runtime you install.
 
 ---
 
@@ -29,6 +45,9 @@ npx clrun <command>
 `clrun` is a project-scoped, persistent, deterministic CLI execution substrate
 designed for AI coding agents. It provides interactive PTY sessions with queued
 input, priority control, keystroke navigation, and crash recovery.
+
+The Node.js version uses `node-pty` for PTY management. The Python version uses
+`pexpect` (no native compilation needed on macOS/Linux).
 
 All responses are **structured YAML** with contextual `hints` that tell you
 exactly what to do next. Every error includes recovery steps. Every success
@@ -278,6 +297,13 @@ clrun <id> ""                    # Accept default
 # Continue for each prompt...
 ```
 
+## Running a Python project setup
+
+```
+clrun "python3 -m venv .venv && source .venv/bin/activate && pip install -e ."
+clrun tail <id> --lines 20
+```
+
 ## Monitoring a Dev Server
 
 ```
@@ -342,7 +368,7 @@ Inputs are queued deterministically:
 | Ordering | Priority DESC, then FIFO |
 | Default priority | 0 |
 | Override mode | Cancels all pending, sends immediately |
-| Processing interval | 200ms |
+| Processing interval | 200ms (Node) / 100ms (Python) |
 
 ---
 
@@ -375,6 +401,24 @@ warnings:
   - "Input is empty. If you intended to send a shell variable like $MY_VAR,
      use single quotes: clrun <id> 'echo $MY_VAR'"
 ```
+
+---
+
+# Runtime Comparison
+
+| Feature | Node.js (`npm`) | Python (`pip`) |
+|---------|----------------|----------------|
+| PTY library | `node-pty` (native) | `pexpect` (pure Python) |
+| Install | `npm install -g clrun` | `pip install clrun` |
+| Zero-install | `npx clrun <cmd>` | — |
+| CLI framework | `commander` | `click` |
+| YAML library | `yaml` | `pyyaml` |
+| Platforms | macOS, Linux, Windows | macOS, Linux |
+| State format | `.clrun/` (JSON files) | `.clrun/` (JSON files) |
+| Output format | YAML | YAML |
+| Commands | Identical | Identical |
+
+Both runtimes are fully compatible — they share the same `.clrun/` state directory format and produce identical YAML output.
 
 ---
 

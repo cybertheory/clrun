@@ -54,6 +54,12 @@ export function Navbar() {
             npm
           </a>
           <a
+            href="https://pypi.org/project/clrun/"
+            className="text-sm text-muted-foreground hover:text-foreground transition-colors hidden sm:block"
+          >
+            PyPI
+          </a>
+          <a
             href="https://github.com/cybertheory/clrun"
             target="_blank"
             rel="noopener noreferrer"

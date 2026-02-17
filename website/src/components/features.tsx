@@ -58,7 +58,7 @@ const features = [
     icon: Cpu,
     title: "AI-Native CLI Workflows",
     description:
-      "Designed from the ground up for AI coding agents. Built-in skill files teach agents how to use the tool without configuration.",
+      "Designed from the ground up for AI coding agents. Available as both npm and pip packages. Built-in skill files teach agents how to use the tool without configuration.",
   },
   {
     icon: Eye,

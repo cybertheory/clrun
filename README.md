@@ -8,9 +8,17 @@
 
 `clrun` gives AI agents full control over interactive terminal sessions — TUI prompts, select lists, checkboxes, long-running processes, and stateful shells. Every response is structured YAML with contextual hints telling the agent exactly what to do next.
 
+**Node.js:**
 ```bash
 npm install -g clrun
 ```
+
+**Python:**
+```bash
+pip install clrun
+```
+
+Both runtimes share the same CLI commands, YAML output format, and `.clrun/` state layout.
 
 ---
 

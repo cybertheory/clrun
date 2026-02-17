@@ -18,6 +18,14 @@ Thumbs.db
 *.swp
 *.swo
 
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+python/dist/
+python/.venv/
+python/build/
+
 # Environment
 .env
 .env.local

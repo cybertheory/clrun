@@ -1,0 +1,41 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "clrun"
+version = "1.1.0"
+description = "The Interactive CLI for AI Agents — persistent, deterministic, project-scoped execution"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.9"
+authors = [{ name = "cybertheory" }]
+keywords = ["cli", "terminal", "tui", "interactive", "agent", "pty", "shell", "ai"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries",
+    "Topic :: System :: Shells",
+    "Topic :: Terminals",
+]
+dependencies = [
+    "click>=8.0",
+    "pexpect>=4.8",
+    "pyyaml>=6.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/cybertheory/clrun"
+Repository = "https://github.com/cybertheory/clrun"
+Issues = "https://github.com/cybertheory/clrun/issues"
+
+[project.scripts]
+clrun = "clrun.cli:main"

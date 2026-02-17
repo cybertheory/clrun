@@ -5,8 +5,11 @@
 
 clrun gives AI agents full control over interactive terminal sessions — TUI prompts, select lists, checkboxes, confirms, long-running processes — with structured YAML responses, contextual hints, and auto-suspend/restore.
 
+Available as both **Node.js** and **Python** packages with identical CLI interfaces.
+
 - GitHub: https://github.com/cybertheory/clrun
 - npm: https://www.npmjs.com/package/clrun
+- PyPI: https://pypi.org/project/clrun/
 
 ## Documentation
 
@@ -21,12 +24,17 @@ clrun gives AI agents full control over interactive terminal sessions — TUI pr
 
 ## Quick Start
 
-Install:
+Install (Node.js):
 ```
 npm install -g clrun
 ```
 
-Run a command:
+Install (Python):
+```
+pip install clrun
+```
+
+Run a command (same CLI regardless of runtime):
 ```
 clrun echo "hello world"
 ```

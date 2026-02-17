@@ -1,10 +1,18 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { ArrowRight, Terminal } from "lucide-react";
 
+const installTabs = [
+  { id: "node", label: "Node.js", command: "npx clrun echo hello world" },
+  { id: "python", label: "Python", command: "pip install clrun && clrun echo hello world" },
+] as const;
+
 export function Hero() {
+  const [activeTab, setActiveTab] = useState<"node" | "python">("node");
+
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
       {/* Background gradient */}
@@ -31,7 +39,7 @@ export function Hero() {
         >
           <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border/50 bg-card/50 text-sm text-muted-foreground backdrop-blur-sm">
             <Terminal className="w-4 h-4" />
-            Open Source &middot; Production Grade
+            Open Source &middot; Node.js &amp; Python
           </span>
         </motion.div>
 
@@ -61,7 +69,7 @@ export function Hero() {
           Persistent. Deterministic. Project-Scoped Execution.
         </motion.p>
 
-        {/* Code block */}
+        {/* Code block with language tabs */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -73,17 +81,38 @@ export function Hero() {
               <div className="w-3 h-3 rounded-full bg-red-500/70" />
               <div className="w-3 h-3 rounded-full bg-yellow-500/70" />
               <div className="w-3 h-3 rounded-full bg-green-500/70" />
-              <span className="ml-3 text-xs text-muted-foreground font-mono">
-                terminal
-              </span>
-            </div>
-            <div className="px-6 py-5 font-mono text-left">
-              <div className="flex items-center gap-2">
-                <span className="text-zinc-500">$</span>
-                <span className="text-emerald-400 text-sm sm:text-base">
-                  npx clrun echo hello world
-                </span>
+              <div className="ml-auto flex items-center gap-1 rounded-lg bg-zinc-800/80 p-0.5">
+                {installTabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`px-3 py-1 rounded-md text-xs font-mono transition-all ${
+                      activeTab === tab.id
+                        ? "bg-zinc-700 text-zinc-100 shadow-sm"
+                        : "text-zinc-500 hover:text-zinc-300"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
               </div>
+            </div>
+            <div className="px-6 py-5 font-mono text-left min-w-[340px] sm:min-w-[460px]">
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={activeTab}
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -4 }}
+                  transition={{ duration: 0.15 }}
+                  className="flex items-center gap-2"
+                >
+                  <span className="text-zinc-500">$</span>
+                  <span className="text-emerald-400 text-sm sm:text-base">
+                    {installTabs.find((t) => t.id === activeTab)?.command}
+                  </span>
+                </motion.div>
+              </AnimatePresence>
             </div>
           </div>
         </motion.div>

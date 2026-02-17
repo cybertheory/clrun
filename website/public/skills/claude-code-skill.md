@@ -7,6 +7,14 @@ execution. Use `clrun` whenever you need to run commands that require
 interactive input, TUI navigation, long-running processes, or deterministic
 execution control.
 
+## Prerequisites
+
+Install via npm or pip — the CLI commands are identical:
+```bash
+npm install -g clrun   # Node.js
+pip install clrun      # Python
+```
+
 ## When to Use clrun
 
 - **Interactive scaffolders** — create-vue, create-vite, create-astro, npm init
