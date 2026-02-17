@@ -1,6 +1,6 @@
 # clrun — The Interactive CLI for AI Agents
 
-> Persistent. Deterministic. Project-Scoped Execution.
+> Now Agents can Interact and Manage Long-Running, Stateful, TUI sessions in parallel
 > No more --yes flags or command retries.
 
 clrun gives AI agents full control over interactive terminal sessions — TUI prompts, select lists, checkboxes, confirms, long-running processes — with structured YAML responses, contextual hints, and auto-suspend/restore.
@@ -24,14 +24,19 @@ Or use without installing:
 npx clrun <command>
 ```
 
-Python:
+Python (uv):
 ```
-pip install clrun-cli
+uv tool install clrun-cli
 ```
 
-Or with pipx:
+Run without installing:
 ```
-pipx install clrun
+uvx clrun-cli <command>
+```
+
+Or with pip:
+```
+pip install clrun-cli
 ```
 
 Both versions produce identical YAML output, use the same `.clrun/` state format, and install the same agent skills. The CLI commands are the same regardless of which runtime you install.
@@ -409,7 +414,7 @@ warnings:
 | Feature | Node.js (`npm`) | Python (`pip`) |
 |---------|----------------|----------------|
 | PTY library | `node-pty` (native) | `pexpect` (pure Python) |
-| Install | `npm install -g clrun` | `pip install clrun-cli` |
+| Install | `npm install -g clrun` | `uv tool install clrun-cli` |
 | Zero-install | `npx clrun <cmd>` | — |
 | CLI framework | `commander` | `click` |
 | YAML library | `yaml` | `pyyaml` |

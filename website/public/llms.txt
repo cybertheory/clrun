@@ -1,6 +1,6 @@
 # clrun — The Interactive CLI for AI Agents
 
-> Persistent. Deterministic. Project-Scoped Execution.
+> Now Agents can Interact and Manage Long-Running, Stateful, TUI sessions in parallel
 > No more --yes flags or command retries.
 
 clrun gives AI agents full control over interactive terminal sessions — TUI prompts, select lists, checkboxes, confirms, long-running processes — with structured YAML responses, contextual hints, and auto-suspend/restore.
@@ -31,8 +31,9 @@ npm install -g clrun
 
 Install (Python):
 ```
-pip install clrun-cli
+uv tool install clrun-cli
 ```
+(pip: `pip install clrun-cli`)
 
 Run a command (same CLI regardless of runtime):
 ```

@@ -9,8 +9,9 @@
 `clrun` gives AI agents full control over interactive terminal sessions — TUI prompts, select lists, checkboxes, long-running processes, and stateful shells. Every response is structured YAML with contextual hints telling the agent exactly what to do next.
 
 ```bash
-pip install clrun-cli
+uv tool install clrun-cli
 ```
+(pip: `pip install clrun-cli`)
 
 ---
 
@@ -101,7 +102,7 @@ This is the Python port of `clrun`. It uses `pexpect` for PTY management instead
 Install via pip:
 
 ```bash
-pip install clrun-cli
+uv tool install clrun-cli
 ```
 
 Or pipx for isolated install:

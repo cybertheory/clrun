@@ -18,10 +18,11 @@ npm install -g clrun
 # or: npx clrun <command>
 ```
 
-Python:
+Python (uv):
 ```bash
-pip install clrun-cli
+uv tool install clrun-cli
 ```
+(pip: `pip install clrun-cli`)
 
 Both runtimes produce identical YAML output and use the same `.clrun/` state format.
 

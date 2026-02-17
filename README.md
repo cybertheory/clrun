@@ -15,8 +15,9 @@ npm install -g clrun
 
 **Python:**
 ```bash
-pip install clrun-cli
+uv tool install clrun-cli
 ```
+(pip: `pip install clrun-cli`)
 
 Both runtimes share the same CLI commands, YAML output format, and `.clrun/` state layout.
 

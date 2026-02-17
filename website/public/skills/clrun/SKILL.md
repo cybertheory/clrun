@@ -19,10 +19,11 @@ Node.js:
 npm install -g clrun
 ```
 
-Python:
+Python (uv):
 ```bash
-pip install clrun-cli
+uv tool install clrun-cli
 ```
+(pip: `pip install clrun-cli`)
 
 ## Core Commands
 

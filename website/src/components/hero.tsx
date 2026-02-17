@@ -7,7 +7,7 @@ import { ArrowRight, Terminal } from "lucide-react";
 
 const installTabs = [
   { id: "node", label: "Node.js", command: "npx clrun echo hello world" },
-  { id: "python", label: "Python", command: "pip install clrun-cli && clrun echo hello world" },
+  { id: "python", label: "Python", command: "uvx clrun-cli echo hello world" },
 ] as const;
 
 export function Hero() {
@@ -66,7 +66,7 @@ export function Hero() {
           transition={{ duration: 0.7, delay: 0.35 }}
           className="text-lg sm:text-xl md:text-2xl text-muted-foreground font-light tracking-wide mb-12"
         >
-          Persistent. Deterministic. Project-Scoped Execution.
+          Now Agents can Interact and Manage Long-Running, Stateful, TUI sessions in parallel
         </motion.p>
 
         {/* Code block with language tabs */}

@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "clrun — The Interactive CLI for AI Agents",
   description:
-    "Persistent. Deterministic. Project-Scoped Execution. The production-grade CLI substrate for AI coding agents.",
+    "Now Agents can Interact and Manage Long-Running, Stateful, TUI sessions in parallel. The production-grade CLI substrate for AI coding agents.",
   icons: [],
   keywords: [
     "CLI",
@@ -31,14 +31,14 @@ export const metadata: Metadata = {
   openGraph: {
     title: "clrun — The Interactive CLI for AI Agents",
     description:
-      "Persistent. Deterministic. Project-Scoped Execution.",
+      "Now Agents can Interact and Manage Long-Running, Stateful, TUI sessions in parallel.",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
     title: "clrun — The Interactive CLI for AI Agents",
     description:
-      "Persistent. Deterministic. Project-Scoped Execution.",
+      "Now Agents can Interact and Manage Long-Running, Stateful, TUI sessions in parallel.",
   },
 };
 

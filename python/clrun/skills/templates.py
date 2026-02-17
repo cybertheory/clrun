@@ -14,10 +14,11 @@ includes the full set of valid next actions.
 
 ## Installation
 
-Python:
+Python (uv):
 ```bash
-pip install clrun-cli
+uv tool install clrun-cli
 ```
+(pip: `pip install clrun-cli`)
 
 Node.js:
 ```bash
@@ -483,10 +484,11 @@ No more `--yes` flags or command retries. `clrun` gives you full control over in
 
 ## Install
 
-Python:
+Python (uv):
 ```bash
-pip install clrun-cli
+uv tool install clrun-cli
 ```
+(pip: `pip install clrun-cli`)
 
 Node.js:
 ```bash

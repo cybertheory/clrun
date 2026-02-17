@@ -9,10 +9,10 @@ execution control.
 
 ## Prerequisites
 
-Install via npm or pip — the CLI commands are identical:
+Install via npm or uv — the CLI commands are identical:
 ```bash
-npm install -g clrun   # Node.js
-pip install clrun-cli   # Python
+npm install -g clrun      # Node.js
+uv tool install clrun-cli # Python (or: pip install clrun-cli)
 ```
 
 ## When to Use clrun

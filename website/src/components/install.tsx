@@ -24,15 +24,15 @@ const languages = [
     id: "python",
     label: "Python",
     icon: "🐍",
-    install: "pip install clrun-cli",
-    installAlt: "pipx install clrun-cli",
+    install: "uv tool install clrun-cli",
+    installAlt: "uvx clrun-cli <command>",
     installLabel: "Or with pipx:",
     badge: "PyPI",
     link: "https://pypi.org/project/clrun-cli/",
     features: [
       "Uses pexpect — no native compilation needed",
       "Works on macOS and Linux out of the box",
-      "Same CLI interface, same YAML output",
+      "Same CLI interface, same YAML output (pip works too)",
     ],
   },
 ] as const;
