@@ -54,7 +54,7 @@ export function Navbar() {
             npm
           </a>
           <a
-            href="https://pypi.org/project/clrun/"
+            href="https://pypi.org/project/clrun-cli/"
             className="text-sm text-muted-foreground hover:text-foreground transition-colors hidden sm:block"
           >
             PyPI

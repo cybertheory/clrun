@@ -25,7 +25,7 @@ npm install -g clrun
 
 Python:
 \`\`\`bash
-pip install clrun
+pip install clrun-cli
 \`\`\`
 
 Both runtimes produce identical YAML output and use the same \`.clrun/\` state format.
@@ -788,7 +788,7 @@ npm install -g clrun
 
 Python:
 \\\`\\\`\\\`bash
-pip install clrun
+pip install clrun-cli
 \\\`\\\`\\\`
 
 ## Core Commands

@@ -11,7 +11,7 @@ for interactive, persistent command execution within coding projects.
 terminal sessions that persist independently of your agent process, with
 deterministic input queuing, keystroke navigation, and priority control.
 
-Available via `npm install -g clrun` (Node.js) or `pip install clrun` (Python).
+Available via `npm install -g clrun` (Node.js) or `pip install clrun-cli` (Python).
 Both runtimes produce identical YAML output and use the same CLI commands.
 
 All responses are **structured YAML** with `hints` (valid next actions) and

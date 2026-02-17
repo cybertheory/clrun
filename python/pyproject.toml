@@ -3,7 +3,7 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project]
-name = "clrun"
+name = "clrun-cli"
 version = "1.1.0"
 description = "The Interactive CLI for AI Agents — persistent, deterministic, project-scoped execution"
 readme = "README.md"
@@ -39,3 +39,6 @@ Issues = "https://github.com/cybertheory/clrun/issues"
 
 [project.scripts]
 clrun = "clrun.cli:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["clrun"]

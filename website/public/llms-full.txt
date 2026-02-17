@@ -9,7 +9,7 @@ Available as both **Node.js** and **Python** packages with identical CLI interfa
 
 - GitHub: https://github.com/cybertheory/clrun
 - npm: https://www.npmjs.com/package/clrun
-- PyPI: https://pypi.org/project/clrun/
+- PyPI: https://pypi.org/project/clrun-cli/
 - Website: https://clrun.dev
 
 ## Installation
@@ -26,7 +26,7 @@ npx clrun <command>
 
 Python:
 ```
-pip install clrun
+pip install clrun-cli
 ```
 
 Or with pipx:
@@ -409,7 +409,7 @@ warnings:
 | Feature | Node.js (`npm`) | Python (`pip`) |
 |---------|----------------|----------------|
 | PTY library | `node-pty` (native) | `pexpect` (pure Python) |
-| Install | `npm install -g clrun` | `pip install clrun` |
+| Install | `npm install -g clrun` | `pip install clrun-cli` |
 | Zero-install | `npx clrun <cmd>` | — |
 | CLI framework | `commander` | `click` |
 | YAML library | `yaml` | `pyyaml` |

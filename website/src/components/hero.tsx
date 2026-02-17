@@ -7,7 +7,7 @@ import { ArrowRight, Terminal } from "lucide-react";
 
 const installTabs = [
   { id: "node", label: "Node.js", command: "npx clrun echo hello world" },
-  { id: "python", label: "Python", command: "pip install clrun && clrun echo hello world" },
+  { id: "python", label: "Python", command: "pip install clrun-cli && clrun echo hello world" },
 ] as const;
 
 export function Hero() {

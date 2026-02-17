@@ -38,7 +38,7 @@ export function Footer() {
               npm
             </a>
             <a
-              href="https://pypi.org/project/clrun/"
+              href="https://pypi.org/project/clrun-cli/"
               className="hover:text-foreground transition-colors"
             >
               PyPI

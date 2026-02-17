@@ -16,7 +16,7 @@ includes the full set of valid next actions.
 
 Python:
 ```bash
-pip install clrun
+pip install clrun-cli
 ```
 
 Node.js:
@@ -485,7 +485,7 @@ No more `--yes` flags or command retries. `clrun` gives you full control over in
 
 Python:
 ```bash
-pip install clrun
+pip install clrun-cli
 ```
 
 Node.js:

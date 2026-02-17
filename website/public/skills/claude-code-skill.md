@@ -12,7 +12,7 @@ execution control.
 Install via npm or pip — the CLI commands are identical:
 ```bash
 npm install -g clrun   # Node.js
-pip install clrun      # Python
+pip install clrun-cli   # Python
 ```
 
 ## When to Use clrun

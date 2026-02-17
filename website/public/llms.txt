@@ -9,7 +9,7 @@ Available as both **Node.js** and **Python** packages with identical CLI interfa
 
 - GitHub: https://github.com/cybertheory/clrun
 - npm: https://www.npmjs.com/package/clrun
-- PyPI: https://pypi.org/project/clrun/
+- PyPI: https://pypi.org/project/clrun-cli/
 
 ## Documentation
 
@@ -31,7 +31,7 @@ npm install -g clrun
 
 Install (Python):
 ```
-pip install clrun
+pip install clrun-cli
 ```
 
 Run a command (same CLI regardless of runtime):

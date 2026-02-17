@@ -21,7 +21,7 @@ npm install -g clrun
 
 Python:
 ```bash
-pip install clrun
+pip install clrun-cli
 ```
 
 ## Core Commands
