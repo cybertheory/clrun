@@ -70,6 +70,7 @@ export type LedgerEventType =
   | 'input.override'
   | 'key.sent'
   | 'skills.installed'
+  | 'skills.global_installed'
   | 'error';
 
 export interface LedgerEvent {
