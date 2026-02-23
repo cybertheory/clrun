@@ -85,7 +85,7 @@ clrun kill <id>
 
 ## Dynamic remote CLIs (SCP)
 
-**CLRUN supports dynamic remote CLIs via [SCP](https://github.com/cybertheory/swp) (Structured Command Protocol).** npm: [scp-sdk](https://www.npmjs.com/package/scp-sdk). Connect to any SCP server and drive its workflow as an interactive terminal: same `clrun <id>`, `clrun key <id>`, and `clrun tail` semantics. The server exposes CLI metadata (hints, next steps, options) at a standardized path; CLRUN fetches it after every state update and renders the flow in the virtual terminal.
+**CLRUN supports dynamic remote CLIs via [SCP](https://github.com/cybertheory/scp) (Structured Command Protocol).** [SCP repo](https://github.com/cybertheory/scp) · npm: [scp-sdk](https://www.npmjs.com/package/scp-sdk). Connect to any SCP server and drive its workflow as an interactive terminal: same `clrun <id>`, `clrun key <id>`, and `clrun tail` semantics. The server exposes CLI metadata (hints, next steps, options) at a standardized path; CLRUN fetches it after every state update and renders the flow in the virtual terminal.
 
 ```bash
 # Connect to an SCP server
