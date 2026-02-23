@@ -83,6 +83,28 @@ clrun kill <id>
 
 ---
 
+## Dynamic remote CLIs (SCP)
+
+**CLRUN supports dynamic remote CLIs via SCP.** Connect to any SCP server and drive its workflow as an interactive terminal: same `clrun <id>`, `clrun key <id>`, and `clrun tail` semantics. The server exposes CLI metadata (hints, next steps, options) at a standardized path; CLRUN fetches it after every state update and renders the flow in the virtual terminal.
+
+```bash
+# Connect to an SCP server
+clrun scp http://localhost:8000
+
+# Send option number or action name (same as PTY input)
+clrun <id> "1"
+clrun <id> "<action_name>"
+
+# View output and manage session
+clrun tail <id> --lines 50
+clrun status
+clrun kill <id>
+```
+
+Node and Python CLRUN both support SCP with identical semantics. Use `clrun scp <url>` to drive dynamic remote CLI experiences from any SCP-compatible server.
+
+---
+
 ## Real-World Example: Scaffolding a Vue App
 
 ```bash
@@ -177,6 +199,16 @@ clrun <id>                     # Shorthand for tail
 ### `clrun status` — All sessions
 
 ### `clrun kill <id>` — Terminate session
+
+### `clrun scp <url>` — Connect to a dynamic remote CLI (SCP)
+
+Start an SCP-backed session. Use `clrun <id> "<option or action>"` to drive the flow; same tail/status/kill as PTY sessions.
+
+```bash
+clrun scp http://localhost:8000
+clrun <id> "1"
+clrun tail <id> --lines 50
+```
 
 ---
 

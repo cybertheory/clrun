@@ -8,6 +8,7 @@ import { tailCommand } from './commands/tail';
 import { headCommand } from './commands/head';
 import { statusCommand } from './commands/status';
 import { killCommand } from './commands/kill';
+import { scpConnectCommand } from './commands/scp';
 import { withErrorHandling } from './utils/output';
 
 const program = new Command();
@@ -95,10 +96,18 @@ program
     await killCommand(terminalId);
   }));
 
+program
+  .command('scp')
+  .description('Connect to an SCP server and start a dynamic remote CLI session')
+  .argument('<base_url>', 'SCP server base URL (e.g. http://localhost:8000)')
+  .action(withErrorHandling(async (baseUrl: string) => {
+    await scpConnectCommand(baseUrl);
+  }));
+
 // ─── Smart routing: bare commands & terminal_id shorthand ───────────────────
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const knownCommands = new Set(['run', 'input', 'key', 'tail', 'head', 'status', 'kill', 'help']);
+const knownCommands = new Set(['run', 'input', 'key', 'tail', 'head', 'status', 'kill', 'scp', 'help']);
 
 const firstArg = process.argv[2];
 

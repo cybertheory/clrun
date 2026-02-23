@@ -79,6 +79,17 @@ def key_command(terminal_id: str, keys: List[str]) -> None:
         fail(session_not_found_error(terminal_id))
         return
 
+    if session.scp_run_id and session.scp_base_url:
+        fail({
+            "error": "SCP sessions use text input, not key sequences.",
+            "hints": {
+                "send_option": f"clrun {terminal_id} \"1\"  # or 2, 3, ... for option index",
+                "send_action": f"clrun {terminal_id} \"<action_name>\"  # e.g. action from the list",
+                "view_output": f"clrun tail {terminal_id} --lines 50",
+            },
+        })
+        return
+
     if session.status == "suspended":
         restore_session(terminal_id, project_root)
         session = read_session(terminal_id, project_root)

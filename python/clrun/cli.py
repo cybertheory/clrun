@@ -10,7 +10,7 @@ import click
 from clrun.utils.output import fail
 
 UUID_RE = re.compile(r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$", re.IGNORECASE)
-KNOWN_COMMANDS = {"run", "input", "key", "tail", "head", "status", "kill", "help", "--help", "--version", "-h"}
+KNOWN_COMMANDS = {"run", "input", "key", "tail", "head", "status", "kill", "scp", "help", "--help", "--version", "-h"}
 
 
 def _error_handler(fn):
@@ -95,6 +95,14 @@ def kill(terminal_id: str) -> None:
     """Kill a running terminal session."""
     from clrun.commands.kill import kill_command
     kill_command(terminal_id)
+
+
+@cli.command()
+@click.argument("base_url")
+def scp(base_url: str) -> None:
+    """Connect to an SCP server and start a dynamic remote CLI session."""
+    from clrun.commands.scp import scp_connect_command
+    scp_connect_command(base_url)
 
 
 def main() -> None:

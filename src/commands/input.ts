@@ -28,6 +28,29 @@ export async function inputCommand(
     fail(sessionNotFoundError(terminalId));
   }
 
+  // ── SCP-backed session: handle input via transition + getCli ─────────────
+  if (session!.scp_run_id && session!.scp_base_url) {
+    const { handleScpInput } = await import('../scp/session');
+    const { output } = await handleScpInput(
+      terminalId,
+      input,
+      projectRoot,
+      session!.scp_base_url,
+      session!.scp_run_id
+    );
+    success({
+      terminal_id: terminalId,
+      input,
+      output,
+      hints: {
+        view_output: `clrun tail ${terminalId} --lines 50`,
+        send_more: `clrun ${terminalId} '<option or action>'`,
+        check_status: `clrun status`,
+      },
+    });
+    return;
+  }
+
   // ── Transparent restore for suspended sessions ────────────────────────
   if (session!.status === 'suspended') {
     const bufferBefore = getBufferSize(terminalId, projectRoot);

@@ -86,6 +86,18 @@ export async function keyCommand(
     fail(sessionNotFoundError(terminalId));
   }
 
+  // ── SCP-backed session: use text input (option number or action name) ───
+  if (session!.scp_run_id && session!.scp_base_url) {
+    fail({
+      error: 'SCP sessions use text input, not key sequences.',
+      hints: {
+        send_option: `clrun ${terminalId} "1"  # or 2, 3, ... for option index`,
+        send_action: `clrun ${terminalId} "<action_name>"  # e.g. action from the list`,
+        view_output: `clrun tail ${terminalId} --lines 50`,
+      },
+    });
+  }
+
   // ── Transparent restore for suspended sessions ─────────────────────────
   if (session!.status === 'suspended') {
     // Queue the key sequence as a raw string (worker will handle \r)

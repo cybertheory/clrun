@@ -72,6 +72,7 @@ clrun kill <terminal_id>
 | Action | Command |
 |--------|---------|
 | Run a command | `clrun <command>` |
+| Connect to SCP server | `clrun scp <url>` |
 | Send text + Enter | `clrun <id> "text"` |
 | Send keystrokes | `clrun key <id> down enter` |
 | Toggle checkbox | `clrun key <id> space` |
@@ -80,6 +81,26 @@ clrun kill <terminal_id>
 | Check sessions | `clrun status` |
 | Kill session | `clrun kill <id>` |
 | Interrupt | `clrun key <id> ctrl-c` |
+
+## Dynamic remote CLIs (SCP)
+
+**CLRUN supports dynamic remote CLIs via SCP.** You can connect to any SCP server and drive its workflow as an interactive terminal: the server exposes CLI metadata (hints, options) at a standardized path, and CLRUN renders them in the virtual terminal.
+
+```bash
+# Connect to an SCP server
+clrun scp http://localhost:8000
+
+# Same semantics as PTY sessions: send option number or action name
+clrun <terminal_id> "1"
+clrun <terminal_id> "<action_name>"
+
+# View output and status
+clrun tail <terminal_id> --lines 50
+clrun status
+clrun kill <terminal_id>
+```
+
+Python and Node CLRUN both support SCP with identical semantics and the same canonical CLI metadata format. Install and use `clrun scp <url>` to drive dynamic remote CLI experiences.
 
 ## TUI Prompt Navigation
 

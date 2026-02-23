@@ -26,6 +26,25 @@ def input_command(terminal_id: str, text: str, priority: int = 0, override: bool
         fail(session_not_found_error(terminal_id))
         return  # unreachable, fail exits
 
+    # SCP-backed session: handle input via transition + get_cli
+    if session.scp_run_id and session.scp_base_url:
+        from clrun.scp.session import handle_scp_input
+        result = handle_scp_input(
+            terminal_id, text, project_root,
+            session.scp_base_url, session.scp_run_id,
+        )
+        success({
+            "terminal_id": terminal_id,
+            "input": text,
+            "output": result.get("output", ""),
+            "hints": {
+                "view_output": f"clrun tail {terminal_id} --lines 50",
+                "send_more": f"clrun {terminal_id} '<option or action>'",
+                "check_status": "clrun status",
+            },
+        })
+        return
+
     # Transparent restore for suspended sessions
     if session.status == "suspended":
         buffer_before = get_buffer_size(terminal_id, project_root)

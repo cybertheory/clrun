@@ -2,6 +2,7 @@ import { Navbar } from "@/components/navbar";
 import { Hero } from "@/components/hero";
 import { Install } from "@/components/install";
 import { Features } from "@/components/features";
+import { SCPSection } from "@/components/scp-section";
 import { AgentNative } from "@/components/agent-native";
 import { HowItWorks } from "@/components/how-it-works";
 import { SkillsSection } from "@/components/skills-section";
@@ -16,6 +17,7 @@ export default function Home() {
         <Hero />
         <Install />
         <Features />
+        <SCPSection />
         <AgentNative />
         <HowItWorks />
         <SkillsSection />

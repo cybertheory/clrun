@@ -21,6 +21,9 @@ export interface SessionMetadata {
   last_exit_code: number | null;
   last_activity_at: string;
   saved_state?: SavedState;
+  /** When set, this session is SCP-backed (no PTY). */
+  scp_run_id?: string;
+  scp_base_url?: string;
 }
 
 // ─── Queue ──────────────────────────────────────────────────────────────────

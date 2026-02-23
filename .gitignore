@@ -29,3 +29,6 @@ python/build/
 # Environment
 .env
 .env.local
+
+# SCP (separate repo; ignore when working in CLRUN repo — only root SCP/ folder)
+/SCP/

@@ -51,6 +51,8 @@ class SessionMetadata:
     last_exit_code: Optional[int] = None
     last_activity_at: str = ""
     saved_state: Optional[SavedState] = None
+    scp_run_id: Optional[str] = None
+    scp_base_url: Optional[str] = None
 
     def to_dict(self) -> Dict[str, Any]:
         d: Dict[str, Any] = {
@@ -72,6 +74,10 @@ class SessionMetadata:
                 "env": self.saved_state.env,
                 "captured_at": self.saved_state.captured_at,
             }
+        if self.scp_run_id is not None:
+            d["scp_run_id"] = self.scp_run_id
+        if self.scp_base_url is not None:
+            d["scp_base_url"] = self.scp_base_url
         return d
 
     @classmethod
@@ -91,6 +97,8 @@ class SessionMetadata:
             last_exit_code=d.get("last_exit_code"),
             last_activity_at=d.get("last_activity_at", ""),
             saved_state=saved,
+            scp_run_id=d.get("scp_run_id"),
+            scp_base_url=d.get("scp_base_url"),
         )
 
 
