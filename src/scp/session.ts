@@ -18,7 +18,9 @@ export async function handleScpInput(
   const resolved = resolveInputToActionOrBody(input, options);
 
   if (!resolved) {
-    const lines: string[] = ['Unknown option. Choose one of:'];
+    const lines: string[] = options.length
+      ? ['Unknown option. Choose one of:']
+      : ['No options available; this run may already be complete.'];
     options.forEach((o, i) => lines.push(`  ${i + 1}. ${o.label} (or "${o.action}")`));
     const out = lines.join('\n') + '\n';
     appendToBuffer(terminalId, out, projectRoot);
